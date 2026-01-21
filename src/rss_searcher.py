@@ -127,7 +127,9 @@ class RSSSearcher:
             if articles:
                 return FeedResult(name=name, url=url, articles=articles)
             else:
-                return FeedResult(name=name, url=url, articles=[], error="No articles returned")
+                return FeedResult(
+                    name=name, url=url, articles=[], error="No articles returned"
+                )
         except Exception as e:
             return FeedResult(name=name, url=url, articles=[], error=str(e))
 

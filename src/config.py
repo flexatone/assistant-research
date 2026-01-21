@@ -50,7 +50,6 @@ DEFAULT_FEEDS = [
     ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
     ("Real Python", "https://realpython.com/atom.xml"),
     ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
-
 ]
 
 # User-added custom feeds (name, url) tuples

@@ -132,7 +132,9 @@ def cmd_test_feeds(_args):
     max_name_len = max(len(r.name) for r in results)
     for result in results:
         if result.ok:
-            print(f"  {result.name:<{max_name_len}}  OK ({len(result.articles)} articles)")
+            print(
+                f"  {result.name:<{max_name_len}}  OK ({len(result.articles)} articles)"
+            )
         else:
             print(f"  {result.name:<{max_name_len}}  FAIL - {result.error}")
 

@@ -1,6 +1,7 @@
 """Aggregates GitHub data into a structured activity profile."""
 
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -99,18 +100,33 @@ class ProfileBuilder:
         # Filter to repos with recent activity
         active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
 
-        # Fetch commits from active repos
+        # Fetch commits, PRs, and issues concurrently
         all_commits: list[Commit] = []
         repo_commit_counts: dict[str, int] = {}
+        prs: list[PullRequest] = []
+        issues: list[Issue] = []
 
-        for repo in active_repos:
-            commits = self.profiler.get_recent_commits(repo.full_name)
-            all_commits.extend(commits)
-            repo_commit_counts[repo.full_name] = len(commits)
+        with ThreadPoolExecutor(max_workers=len(active_repos) + 2) as executor:
+            # Submit all tasks
+            commit_futures = {
+                executor.submit(
+                    self.profiler.get_recent_commits, repo.full_name
+                ): repo.full_name
+                for repo in active_repos
+            }
+            prs_future = executor.submit(self.profiler.get_recent_prs)
+            issues_future = executor.submit(self.profiler.get_recent_issues)
 
-        # Fetch PRs and issues
-        prs = self.profiler.get_recent_prs()
-        issues = self.profiler.get_recent_issues()
+            # Collect commit results
+            for future in as_completed(commit_futures):
+                repo_name = commit_futures[future]
+                commits = future.result()
+                all_commits.extend(commits)
+                repo_commit_counts[repo_name] = len(commits)
+
+            # Collect PRs and issues
+            prs = prs_future.result()
+            issues = issues_future.result()
 
         # Aggregate languages (count repos per language)
         language_counts = Counter(r.language for r in active_repos if r.language)
