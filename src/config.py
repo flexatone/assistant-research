@@ -17,13 +17,13 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 # =============================================================================
 
 # Time window for activity lookback (in days)
-PROFILE_DAYS = 14
+PROFILE_DAYS = 30
 
 # Whether to fetch full commit diffs (richer context, more API calls)
 INCLUDE_DIFFS = True
 
 # Maximum number of repositories to scan
-MAX_REPOS = 20
+MAX_REPOS = 40
 
 # Maximum commits to fetch per repository
 MAX_COMMITS_PER_REPO = 50
