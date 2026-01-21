@@ -43,9 +43,14 @@ DEFAULT_FEEDS = [
     ("Hacker News", "https://hnrss.org/frontpage"),
     ("Lobsters", "https://lobste.rs/rss"),
     ("dev.to", "https://dev.to/feed"),
-    ("ArXiv CS", "http://arxiv.org/rss/cs"),
+    # ("ArXiv CS", "http://arxiv.org/rss/cs"),
     # ("Python Weekly", "https://us2.campaign-archive.com/feed?u=e2e180baf855ac797ef407fc7&id=9e26887fc5"),
     ("Rust Blog", "https://blog.rust-lang.org/feed.xml"),
+    ("Krebs on Security", "https://krebsonsecurity.com/feed"),
+    ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
+    ("Real Python", "https://realpython.com/atom.xml"),
+    ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
+
 ]
 
 # User-added custom feeds (name, url) tuples

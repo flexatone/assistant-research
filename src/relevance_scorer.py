@@ -13,6 +13,7 @@ from .rss_searcher import Article
 @dataclass(frozen=True)
 class ScoredArticle:
     """An article with its relevance score and explanation."""
+
     article: Article
     score: float  # 0-1
     explanation: str
@@ -30,11 +31,15 @@ class RelevanceScorer:
         """
         self.api_key = api_key or config.ANTHROPIC_API_KEY
         if not self.api_key:
-            raise ValueError("Anthropic API key is required. Set ANTHROPIC_API_KEY environment variable.")
+            raise ValueError(
+                "Anthropic API key is required. Set ANTHROPIC_API_KEY environment variable."
+            )
 
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
-    def _build_scoring_prompt(self, profile_summary: str, articles: list[Article]) -> str:
+    def _build_scoring_prompt(
+        self, profile_summary: str, articles: list[Article]
+    ) -> str:
         """Build the prompt for scoring articles."""
         articles_text = []
         for i, article in enumerate(articles):
@@ -66,7 +71,9 @@ Respond with a JSON array of objects, one per article, in order:
 
 Only output the JSON array, no other text."""
 
-    def _parse_scores(self, response_text: str, articles: list[Article]) -> list[ScoredArticle]:
+    def _parse_scores(
+        self, response_text: str, articles: list[Article]
+    ) -> list[ScoredArticle]:
         """Parse the LLM response into scored articles."""
         # Extract JSON from the response
         text = response_text.strip()
@@ -87,15 +94,19 @@ Only output the JSON array, no other text."""
         for item in scores_data:
             idx = item.get("index", 0) - 1  # Convert to 0-indexed
             if 0 <= idx < len(articles):
-                scored.append(ScoredArticle(
-                    article=articles[idx],
-                    score=float(item.get("score", 0)),
-                    explanation=item.get("explanation", ""),
-                ))
+                scored.append(
+                    ScoredArticle(
+                        article=articles[idx],
+                        score=float(item.get("score", 0)),
+                        explanation=item.get("explanation", ""),
+                    )
+                )
 
         return scored
 
-    def score_batch(self, profile_summary: str, articles: list[Article]) -> list[ScoredArticle]:
+    def score_batch(
+        self, profile_summary: str, articles: list[Article]
+    ) -> list[ScoredArticle]:
         """
         Score a batch of articles for relevance.
 
@@ -144,7 +155,7 @@ Only output the JSON array, no other text."""
 
         # Process in batches
         for i in range(0, len(articles), batch_size):
-            batch = articles[i:i + batch_size]
+            batch = articles[i : i + batch_size]
             scored = self.score_batch(profile_summary, batch)
             all_scored.extend(scored)
 

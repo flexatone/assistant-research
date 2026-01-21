@@ -53,11 +53,15 @@ def cmd_search(args):
             profile = builder.build_profile()
             profile_summary = builder.summarize_for_llm(include_diffs=False)
 
-        print(f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits")
+        print(
+            f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
+        )
         print()
 
         # Fetch articles from RSS feeds
-        print(f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds...")
+        print(
+            f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds..."
+        )
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
@@ -68,7 +72,9 @@ def cmd_search(args):
             return
 
         # Score articles for relevance
-        print(f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})...")
+        print(
+            f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})..."
+        )
         scorer = RelevanceScorer()
         scored_articles = scorer.score_articles(profile_summary, articles)
         print(f"Found {len(scored_articles)} relevant articles")
@@ -87,9 +93,15 @@ def cmd_search(args):
 
         for scored in scored_articles:
             article = scored.article
-            date_str = article.published.strftime("%Y-%m-%d") if article.published else "Unknown date"
+            date_str = (
+                article.published.strftime("%Y-%m-%d")
+                if article.published
+                else "Unknown date"
+            )
             output_lines.append(f"## [{article.title}]({article.url})")
-            output_lines.append(f"**Source:** {article.source} | **Date:** {date_str} | **Relevance:** {scored.score:.2f}")
+            output_lines.append(
+                f"**Source:** {article.source} | **Date:** {date_str} | **Relevance:** {scored.score:.2f}"
+            )
             output_lines.append(f"**Why relevant:** {scored.explanation}")
             if article.summary:
                 output_lines.append(f"\n{article.summary}")
@@ -109,6 +121,26 @@ def cmd_search(args):
         sys.exit(1)
 
 
+def cmd_test_feeds(_args):
+    """Test all configured RSS feeds and report which are parsable."""
+    searcher = RSSSearcher()
+    print(f"Testing {len(searcher.feeds)} feeds...\n")
+
+    results = searcher.fetch_all_feeds_with_results()
+
+    # Print results
+    max_name_len = max(len(r.name) for r in results)
+    for result in results:
+        if result.ok:
+            print(f"  {result.name:<{max_name_len}}  OK ({len(result.articles)} articles)")
+        else:
+            print(f"  {result.name:<{max_name_len}}  FAIL - {result.error}")
+
+    # Summary
+    ok_count = sum(1 for r in results if r.ok)
+    print(f"\n{ok_count}/{len(results)} feeds working")
+
+
 def cmd_digest(args):
     """Generate a full digest: profile + search + summarize."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
@@ -120,11 +152,15 @@ def cmd_digest(args):
             profile = builder.build_profile()
             profile_summary = builder.summarize_for_llm(include_diffs=False)
 
-        print(f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits")
+        print(
+            f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
+        )
         print()
 
         # Fetch articles from RSS feeds
-        print(f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds...")
+        print(
+            f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds..."
+        )
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
@@ -135,7 +171,9 @@ def cmd_digest(args):
             return
 
         # Score articles for relevance
-        print(f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})...")
+        print(
+            f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})..."
+        )
         scorer = RelevanceScorer()
         scored_articles = scorer.score_articles(profile_summary, articles)
         print(f"Found {len(scored_articles)} relevant articles")
@@ -166,28 +204,37 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Profile command
-    profile_parser = subparsers.add_parser("profile", help="Generate GitHub activity profile")
+    profile_parser = subparsers.add_parser(
+        "profile", help="Generate GitHub activity profile"
+    )
     profile_parser.add_argument(
-        "-o", "--output",
-        help="Write profile to file instead of stdout"
+        "-o", "--output", help="Write profile to file instead of stdout"
     )
     profile_parser.set_defaults(func=cmd_profile)
 
     # Search command
-    search_parser = subparsers.add_parser("search", help="Search RSS feeds for relevant articles")
+    search_parser = subparsers.add_parser(
+        "search", help="Search RSS feeds for relevant articles"
+    )
     search_parser.add_argument(
-        "-o", "--output",
-        help="Write results to file instead of stdout"
+        "-o", "--output", help="Write results to file instead of stdout"
     )
     search_parser.set_defaults(func=cmd_search)
 
     # Digest command
-    digest_parser = subparsers.add_parser("digest", help="Generate full digest (profile + search + summarize)")
+    digest_parser = subparsers.add_parser(
+        "digest", help="Generate full digest (profile + search + summarize)"
+    )
     digest_parser.add_argument(
-        "-o", "--output",
-        help="Write digest to file instead of stdout"
+        "-o", "--output", help="Write digest to file instead of stdout"
     )
     digest_parser.set_defaults(func=cmd_digest)
+
+    # Test feeds command
+    test_feeds_parser = subparsers.add_parser(
+        "test-feeds", help="Test all RSS feeds for connectivity"
+    )
+    test_feeds_parser.set_defaults(func=cmd_test_feeds)
 
     args = parser.parse_args()
 

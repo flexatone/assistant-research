@@ -11,6 +11,7 @@ from . import config
 @dataclass(frozen=True)
 class CommitSummary:
     """Summary of a commit for the profile."""
+
     sha: str
     repo: str
     message: str
@@ -23,6 +24,7 @@ class CommitSummary:
 @dataclass(frozen=True)
 class PRSummary:
     """Summary of a pull request for the profile."""
+
     number: int
     repo: str
     title: str
@@ -34,6 +36,7 @@ class PRSummary:
 @dataclass(frozen=True)
 class IssueSummary:
     """Summary of an issue for the profile."""
+
     number: int
     repo: str
     title: str
@@ -46,6 +49,7 @@ class IssueSummary:
 @dataclass(frozen=True)
 class RepoSummary:
     """Summary of a repository for the profile."""
+
     full_name: str
     description: str | None
     language: str | None
@@ -56,6 +60,7 @@ class RepoSummary:
 @dataclass(frozen=True)
 class ActivityProfile:
     """Aggregated activity profile from GitHub."""
+
     username: str
     time_range: tuple[datetime, datetime]
     languages: dict[str, int] = field(default_factory=dict)
@@ -92,10 +97,7 @@ class ProfileBuilder:
         repos = self.profiler.get_user_repos()
 
         # Filter to repos with recent activity
-        active_repos = [
-            r for r in repos
-            if r.pushed_at and r.pushed_at >= since
-        ]
+        active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
 
         # Fetch commits from active repos
         all_commits: list[Commit] = []
@@ -111,9 +113,7 @@ class ProfileBuilder:
         issues = self.profiler.get_recent_issues()
 
         # Aggregate languages (count repos per language)
-        language_counts = Counter(
-            r.language for r in active_repos if r.language
-        )
+        language_counts = Counter(r.language for r in active_repos if r.language)
 
         # Aggregate topics
         all_topics = []
@@ -200,7 +200,9 @@ class ProfileBuilder:
             self.build_profile()
 
         profile = self._profile
-        include_diffs = include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
+        include_diffs = (
+            include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
+        )
 
         lines = [
             f"# GitHub Activity Profile for {profile.username}",
@@ -226,7 +228,9 @@ class ProfileBuilder:
             lines.append("## Active Repositories")
             for repo in profile.active_repos:
                 desc = f" - {repo.description}" if repo.description else ""
-                lines.append(f"- **{repo.full_name}** ({repo.commit_count} commits){desc}")
+                lines.append(
+                    f"- **{repo.full_name}** ({repo.commit_count} commits){desc}"
+                )
                 if repo.topics:
                     lines.append(f"  Topics: {', '.join(repo.topics)}")
             lines.append("")
@@ -256,7 +260,9 @@ class ProfileBuilder:
             for pr in profile.recent_prs:
                 status = "merged" if pr.state == "closed" else pr.state
                 lines.append(f"### {pr.repo}#{pr.number}: {pr.title}")
-                lines.append(f"Status: {status} | Created: {pr.created_at.strftime('%Y-%m-%d')}")
+                lines.append(
+                    f"Status: {status} | Created: {pr.created_at.strftime('%Y-%m-%d')}"
+                )
                 if pr.body:
                     lines.append(f"Description: {pr.body}")
                 lines.append("")
@@ -267,7 +273,9 @@ class ProfileBuilder:
             for issue in profile.recent_issues:
                 labels = f" [{', '.join(issue.labels)}]" if issue.labels else ""
                 lines.append(f"### {issue.repo}#{issue.number}: {issue.title}{labels}")
-                lines.append(f"Status: {issue.state} | Created: {issue.created_at.strftime('%Y-%m-%d')}")
+                lines.append(
+                    f"Status: {issue.state} | Created: {issue.created_at.strftime('%Y-%m-%d')}"
+                )
                 if issue.body:
                     lines.append(f"Description: {issue.body}")
                 lines.append("")

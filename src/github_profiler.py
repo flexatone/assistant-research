@@ -12,6 +12,7 @@ from . import config
 @dataclass(frozen=True)
 class Repo:
     """Repository metadata."""
+
     full_name: str
     description: Optional[str]
     language: Optional[str]
@@ -22,6 +23,7 @@ class Repo:
 @dataclass(frozen=True)
 class Commit:
     """Commit data with optional diff."""
+
     sha: str
     repo: str
     message: str
@@ -36,6 +38,7 @@ class Commit:
 @dataclass(frozen=True)
 class PullRequest:
     """Pull request data."""
+
     number: int
     repo: str
     title: str
@@ -49,6 +52,7 @@ class PullRequest:
 @dataclass(frozen=True)
 class Issue:
     """Issue data."""
+
     number: int
     repo: str
     title: str
@@ -67,7 +71,9 @@ class GitHubProfiler:
     def __init__(self, token: Optional[str] = None):
         self.token = token or config.GITHUB_TOKEN
         if not self.token:
-            raise ValueError("GitHub token is required. Set GITHUB_TOKEN environment variable.")
+            raise ValueError(
+                "GitHub token is required. Set GITHUB_TOKEN environment variable."
+            )
 
         self.client = httpx.Client(
             base_url=self.BASE_URL,
@@ -122,25 +128,30 @@ class GitHubProfiler:
         per_page = min(limit, 100)
 
         while len(repos) < limit:
-            data = self._get("/user/repos", params={
-                "sort": "pushed",
-                "direction": "desc",
-                "per_page": per_page,
-                "page": page,
-                "affiliation": "owner,collaborator,organization_member",
-            })
+            data = self._get(
+                "/user/repos",
+                params={
+                    "sort": "pushed",
+                    "direction": "desc",
+                    "per_page": per_page,
+                    "page": page,
+                    "affiliation": "owner,collaborator,organization_member",
+                },
+            )
 
             if not data:
                 break
 
             for repo_data in data:
-                repos.append(Repo(
-                    full_name=repo_data["full_name"],
-                    description=repo_data.get("description"),
-                    language=repo_data.get("language"),
-                    topics=repo_data.get("topics", []),
-                    pushed_at=self._parse_datetime(repo_data.get("pushed_at")),
-                ))
+                repos.append(
+                    Repo(
+                        full_name=repo_data["full_name"],
+                        description=repo_data.get("description"),
+                        language=repo_data.get("language"),
+                        topics=repo_data.get("topics", []),
+                        pushed_at=self._parse_datetime(repo_data.get("pushed_at")),
+                    )
+                )
 
             if len(data) < per_page:
                 break
@@ -168,7 +179,9 @@ class GitHubProfiler:
             List of Commit objects.
         """
         days = days or config.PROFILE_DAYS
-        include_diffs = include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
+        include_diffs = (
+            include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
+        )
         limit = limit or config.MAX_COMMITS_PER_REPO
 
         since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -180,12 +193,15 @@ class GitHubProfiler:
 
         while len(commits) < limit:
             try:
-                data = self._get(f"/repos/{repo}/commits", params={
-                    "author": username,
-                    "since": since.isoformat(),
-                    "per_page": per_page,
-                    "page": page,
-                })
+                data = self._get(
+                    f"/repos/{repo}/commits",
+                    params={
+                        "author": username,
+                        "since": since.isoformat(),
+                        "per_page": per_page,
+                        "page": page,
+                    },
+                )
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 409:  # Empty repository
                     break
@@ -203,7 +219,9 @@ class GitHubProfiler:
 
                 if include_diffs:
                     try:
-                        detailed = self._get(f"/repos/{repo}/commits/{commit_data['sha']}")
+                        detailed = self._get(
+                            f"/repos/{repo}/commits/{commit_data['sha']}"
+                        )
                         stats = detailed.get("stats", stats)
 
                         # Build diff from files
@@ -216,17 +234,21 @@ class GitHubProfiler:
                     except httpx.HTTPStatusError:
                         pass  # Skip diff if we can't fetch it
 
-                commits.append(Commit(
-                    sha=commit_data["sha"],
-                    repo=repo,
-                    message=commit_detail.get("message", ""),
-                    author=commit_detail.get("author", {}).get("name", "unknown"),
-                    date=self._parse_datetime(commit_detail.get("author", {}).get("date")),
-                    files_changed=stats.get("total", 0),
-                    additions=stats.get("additions", 0),
-                    deletions=stats.get("deletions", 0),
-                    diff=diff,
-                ))
+                commits.append(
+                    Commit(
+                        sha=commit_data["sha"],
+                        repo=repo,
+                        message=commit_detail.get("message", ""),
+                        author=commit_detail.get("author", {}).get("name", "unknown"),
+                        date=self._parse_datetime(
+                            commit_detail.get("author", {}).get("date")
+                        ),
+                        files_changed=stats.get("total", 0),
+                        additions=stats.get("additions", 0),
+                        deletions=stats.get("deletions", 0),
+                        diff=diff,
+                    )
+                )
 
             if len(data) < per_page:
                 break
@@ -234,7 +256,9 @@ class GitHubProfiler:
 
         return commits[:limit]
 
-    def get_recent_prs(self, days: Optional[int] = None, limit: Optional[int] = None) -> list[PullRequest]:
+    def get_recent_prs(
+        self, days: Optional[int] = None, limit: Optional[int] = None
+    ) -> list[PullRequest]:
         """
         Fetch recent pull requests authored by the user.
 
@@ -259,13 +283,16 @@ class GitHubProfiler:
         per_page = min(limit, 100)
 
         while len(prs) < limit:
-            data = self._get("/search/issues", params={
-                "q": query,
-                "sort": "created",
-                "order": "desc",
-                "per_page": per_page,
-                "page": page,
-            })
+            data = self._get(
+                "/search/issues",
+                params={
+                    "q": query,
+                    "sort": "created",
+                    "order": "desc",
+                    "per_page": per_page,
+                    "page": page,
+                },
+            )
 
             items = data.get("items", [])
             if not items:
@@ -276,16 +303,20 @@ class GitHubProfiler:
                 repo_url = pr_data.get("repository_url", "")
                 repo = "/".join(repo_url.split("/")[-2:]) if repo_url else "unknown"
 
-                prs.append(PullRequest(
-                    number=pr_data["number"],
-                    repo=repo,
-                    title=pr_data["title"],
-                    body=pr_data.get("body"),
-                    state=pr_data["state"],
-                    author=pr_data["user"]["login"],
-                    created_at=self._parse_datetime(pr_data["created_at"]),
-                    merged_at=self._parse_datetime(pr_data.get("pull_request", {}).get("merged_at")),
-                ))
+                prs.append(
+                    PullRequest(
+                        number=pr_data["number"],
+                        repo=repo,
+                        title=pr_data["title"],
+                        body=pr_data.get("body"),
+                        state=pr_data["state"],
+                        author=pr_data["user"]["login"],
+                        created_at=self._parse_datetime(pr_data["created_at"]),
+                        merged_at=self._parse_datetime(
+                            pr_data.get("pull_request", {}).get("merged_at")
+                        ),
+                    )
+                )
 
             if len(items) < per_page:
                 break
@@ -293,7 +324,9 @@ class GitHubProfiler:
 
         return prs[:limit]
 
-    def get_recent_issues(self, days: Optional[int] = None, limit: Optional[int] = None) -> list[Issue]:
+    def get_recent_issues(
+        self, days: Optional[int] = None, limit: Optional[int] = None
+    ) -> list[Issue]:
         """
         Fetch recent issues created by the user.
 
@@ -318,13 +351,16 @@ class GitHubProfiler:
         per_page = min(limit, 100)
 
         while len(issues) < limit:
-            data = self._get("/search/issues", params={
-                "q": query,
-                "sort": "created",
-                "order": "desc",
-                "per_page": per_page,
-                "page": page,
-            })
+            data = self._get(
+                "/search/issues",
+                params={
+                    "q": query,
+                    "sort": "created",
+                    "order": "desc",
+                    "per_page": per_page,
+                    "page": page,
+                },
+            )
 
             items = data.get("items", [])
             if not items:
@@ -335,16 +371,20 @@ class GitHubProfiler:
                 repo_url = issue_data.get("repository_url", "")
                 repo = "/".join(repo_url.split("/")[-2:]) if repo_url else "unknown"
 
-                issues.append(Issue(
-                    number=issue_data["number"],
-                    repo=repo,
-                    title=issue_data["title"],
-                    body=issue_data.get("body"),
-                    state=issue_data["state"],
-                    author=issue_data["user"]["login"],
-                    created_at=self._parse_datetime(issue_data["created_at"]),
-                    labels=[label["name"] for label in issue_data.get("labels", [])],
-                ))
+                issues.append(
+                    Issue(
+                        number=issue_data["number"],
+                        repo=repo,
+                        title=issue_data["title"],
+                        body=issue_data.get("body"),
+                        state=issue_data["state"],
+                        author=issue_data["user"]["login"],
+                        created_at=self._parse_datetime(issue_data["created_at"]),
+                        labels=[
+                            label["name"] for label in issue_data.get("labels", [])
+                        ],
+                    )
+                )
 
             if len(items) < per_page:
                 break

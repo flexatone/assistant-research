@@ -20,7 +20,9 @@ class DigestWriter:
         """
         self.api_key = api_key or config.ANTHROPIC_API_KEY
         if not self.api_key:
-            raise ValueError("Anthropic API key is required. Set ANTHROPIC_API_KEY environment variable.")
+            raise ValueError(
+                "Anthropic API key is required. Set ANTHROPIC_API_KEY environment variable."
+            )
 
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
@@ -33,7 +35,11 @@ class DigestWriter:
         articles_text = []
         for scored in scored_articles:
             article = scored.article
-            date_str = article.published.strftime("%Y-%m-%d") if article.published else "Unknown"
+            date_str = (
+                article.published.strftime("%Y-%m-%d")
+                if article.published
+                else "Unknown"
+            )
             summary_part = f"\n   Summary: {article.summary}" if article.summary else ""
             articles_text.append(
                 f"- **{article.title}** ({article.source}, {date_str})\n"

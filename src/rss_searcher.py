@@ -1,5 +1,6 @@
 """RSS feed fetching and parsing."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from time import mktime
@@ -11,8 +12,23 @@ from . import config
 
 
 @dataclass(frozen=True)
+class FeedResult:
+    """Result of fetching a single feed."""
+
+    name: str
+    url: str
+    articles: list["Article"]
+    error: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None and len(self.articles) > 0
+
+
+@dataclass(frozen=True)
 class Article:
     """An article from an RSS feed."""
+
     title: str
     url: str
     summary: Optional[str]
@@ -54,7 +70,9 @@ class RSSSearcher:
             return entry.description[:500]
         return None
 
-    def fetch_feed(self, name: str, url: str, limit: Optional[int] = None) -> list[Article]:
+    def fetch_feed(
+        self, name: str, url: str, limit: Optional[int] = None
+    ) -> list[Article]:
         """
         Fetch and parse a single RSS feed.
 
@@ -88,19 +106,60 @@ class RSSSearcher:
 
             title = getattr(entry, "title", "Untitled")
 
-            articles.append(Article(
-                title=title,
-                url=link,
-                summary=self._get_summary(entry),
-                published=self._parse_datetime(entry),
-                source=name,
-            ))
+            articles.append(
+                Article(
+                    title=title,
+                    url=link,
+                    summary=self._get_summary(entry),
+                    published=self._parse_datetime(entry),
+                    source=name,
+                )
+            )
 
         return articles
 
+    def _fetch_feed_safe(
+        self, name: str, url: str, limit: Optional[int] = None
+    ) -> FeedResult:
+        """Fetch a feed and return a FeedResult (never raises)."""
+        try:
+            articles = self.fetch_feed(name, url, limit)
+            if articles:
+                return FeedResult(name=name, url=url, articles=articles)
+            else:
+                return FeedResult(name=name, url=url, articles=[], error="No articles returned")
+        except Exception as e:
+            return FeedResult(name=name, url=url, articles=[], error=str(e))
+
+    def fetch_all_feeds_with_results(
+        self, limit_per_feed: Optional[int] = None
+    ) -> list[FeedResult]:
+        """
+        Fetch all feeds concurrently and return results for each.
+
+        Args:
+            limit_per_feed: Maximum articles per feed. Defaults to config.MAX_ARTICLES_PER_FEED.
+
+        Returns:
+            List of FeedResult objects in original feed order.
+        """
+        results: dict[str, FeedResult] = {}
+
+        with ThreadPoolExecutor(max_workers=len(self.feeds)) as executor:
+            futures = {
+                executor.submit(self._fetch_feed_safe, name, url, limit_per_feed): name
+                for name, url in self.feeds
+            }
+            for future in as_completed(futures):
+                result = future.result()
+                results[result.name] = result
+
+        # Return in original feed order
+        return [results[name] for name, _ in self.feeds]
+
     def fetch_all_feeds(self, limit_per_feed: Optional[int] = None) -> list[Article]:
         """
-        Fetch articles from all configured feeds.
+        Fetch articles from all configured feeds concurrently.
 
         Args:
             limit_per_feed: Maximum articles per feed. Defaults to config.MAX_ARTICLES_PER_FEED.
@@ -108,16 +167,15 @@ class RSSSearcher:
         Returns:
             List of all Article objects, sorted by publish date (newest first).
         """
-        all_articles = []
+        feed_results = self.fetch_all_feeds_with_results(limit_per_feed)
 
-        for name, url in self.feeds:
-            articles = self.fetch_feed(name, url, limit_per_feed)
-            all_articles.extend(articles)
+        all_articles = []
+        for result in feed_results:
+            all_articles.extend(result.articles)
 
         # Sort by published date, newest first (None dates go to the end)
         all_articles.sort(
-            key=lambda a: (a.published is None, a.published),
-            reverse=True
+            key=lambda a: (a.published is None, a.published), reverse=True
         )
 
         return all_articles
