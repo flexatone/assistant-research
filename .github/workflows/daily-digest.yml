@@ -1,0 +1,33 @@
+name: Daily Research Digest
+
+on:
+  schedule:
+    # 6:00 AM Pacific (14:00 UTC) - runs at 7:00 AM during daylight saving
+    - cron: '0 14 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate and post digest
+        env:
+          # Needs PAT with repo scope to read activity across all repos
+          GITHUB_TOKEN_USER: ${{ secrets.GITHUB_TOKEN_USER }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python main.py digest --post-issue
