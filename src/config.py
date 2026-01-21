@@ -44,7 +44,7 @@ DEFAULT_FEEDS = [
     ("Lobsters", "https://lobste.rs/rss"),
     ("dev.to", "https://dev.to/feed"),
     ("ArXiv CS", "http://arxiv.org/rss/cs"),
-    ("Python Weekly", "https://us2.campaign-archive.com/feed?u=e2e180baf855ac797ef407fc7&id=9e26887fc5"),
+    # ("Python Weekly", "https://us2.campaign-archive.com/feed?u=e2e180baf855ac797ef407fc7&id=9e26887fc5"),
     ("Rust Blog", "https://blog.rust-lang.org/feed.xml"),
 ]
 
