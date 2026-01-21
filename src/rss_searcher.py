@@ -1,4 +1,4 @@
-"""RSS feed fetching and parsing."""
+'''RSS feed fetching and parsing.'''
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -13,7 +13,7 @@ from . import config
 
 @dataclass(frozen=True)
 class FeedResult:
-    """Result of fetching a single feed."""
+    '''Result of fetching a single feed.'''
 
     name: str
     url: str
@@ -27,7 +27,7 @@ class FeedResult:
 
 @dataclass(frozen=True)
 class Article:
-    """An article from an RSS feed."""
+    '''An article from an RSS feed.'''
 
     title: str
     url: str
@@ -37,19 +37,19 @@ class Article:
 
 
 class RSSSearcher:
-    """Fetches and parses RSS feeds."""
+    '''Fetches and parses RSS feeds.'''
 
     def __init__(self, feeds: Optional[list[tuple[str, str]]] = None):
-        """
+        '''
         Initialize the RSS searcher.
 
         Args:
             feeds: List of (name, url) tuples. Defaults to config feeds.
-        """
+        '''
         self.feeds = feeds or (config.DEFAULT_FEEDS + config.CUSTOM_FEEDS)
 
     def _parse_datetime(self, entry) -> Optional[datetime]:
-        """Parse the published date from a feed entry."""
+        '''Parse the published date from a feed entry.'''
         if hasattr(entry, "published_parsed") and entry.published_parsed:
             try:
                 return datetime.fromtimestamp(mktime(entry.published_parsed))
@@ -63,7 +63,7 @@ class RSSSearcher:
         return None
 
     def _get_summary(self, entry) -> Optional[str]:
-        """Extract summary from a feed entry."""
+        '''Extract summary from a feed entry.'''
         if hasattr(entry, "summary") and entry.summary:
             return entry.summary[:500]  # Truncate long summaries
         if hasattr(entry, "description") and entry.description:
@@ -73,7 +73,7 @@ class RSSSearcher:
     def fetch_feed(
         self, name: str, url: str, limit: Optional[int] = None
     ) -> list[Article]:
-        """
+        '''
         Fetch and parse a single RSS feed.
 
         Args:
@@ -83,7 +83,7 @@ class RSSSearcher:
 
         Returns:
             List of Article objects.
-        """
+        '''
         limit = limit or config.MAX_ARTICLES_PER_FEED
 
         try:
@@ -121,7 +121,7 @@ class RSSSearcher:
     def _fetch_feed_safe(
         self, name: str, url: str, limit: Optional[int] = None
     ) -> FeedResult:
-        """Fetch a feed and return a FeedResult (never raises)."""
+        '''Fetch a feed and return a FeedResult (never raises).'''
         try:
             articles = self.fetch_feed(name, url, limit)
             if articles:
@@ -136,7 +136,7 @@ class RSSSearcher:
     def fetch_all_feeds_with_results(
         self, limit_per_feed: Optional[int] = None
     ) -> list[FeedResult]:
-        """
+        '''
         Fetch all feeds concurrently and return results for each.
 
         Args:
@@ -144,7 +144,7 @@ class RSSSearcher:
 
         Returns:
             List of FeedResult objects in original feed order.
-        """
+        '''
         results: dict[str, FeedResult] = {}
 
         with ThreadPoolExecutor(max_workers=len(self.feeds)) as executor:
@@ -160,7 +160,7 @@ class RSSSearcher:
         return [results[name] for name, _ in self.feeds]
 
     def fetch_all_feeds(self, limit_per_feed: Optional[int] = None) -> list[Article]:
-        """
+        '''
         Fetch articles from all configured feeds concurrently.
 
         Args:
@@ -168,7 +168,7 @@ class RSSSearcher:
 
         Returns:
             List of all Article objects, sorted by publish date (newest first).
-        """
+        '''
         feed_results = self.fetch_all_feeds_with_results(limit_per_feed)
 
         all_articles = []

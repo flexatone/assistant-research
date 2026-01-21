@@ -1,4 +1,4 @@
-"""Configuration settings for the research assistant."""
+'''Configuration settings for the research assistant.'''
 
 import os
 from dotenv import load_dotenv
@@ -55,6 +55,10 @@ DEFAULT_FEEDS = [
     ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
     ("Real Python", "https://realpython.com/atom.xml"),
     ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
+    ("MIT Research News", "https://news.mit.edu/rss/research"),
+    ("LWN.net", "https://lwn.net/headlines/rss"),
+    ("HackerNoon", "https://hackernoon.com/feed"),
+
 ]
 
 # User-added custom feeds (name, url) tuples
