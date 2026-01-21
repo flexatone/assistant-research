@@ -9,7 +9,7 @@ load_dotenv()
 # Secrets (from environment variables)
 # =============================================================================
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN_USER")
+GITHUB_TOKEN = os.getenv("USER_GITHUB_TOKEN")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # =============================================================================

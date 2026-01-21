@@ -28,6 +28,6 @@ jobs:
       - name: Generate and post digest
         env:
           # Needs PAT with repo scope to read activity across all repos
-          GITHUB_TOKEN_USER: ${{ secrets.GITHUB_TOKEN_USER }}
+          USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python main.py digest --post-issue

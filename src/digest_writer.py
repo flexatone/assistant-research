@@ -58,7 +58,7 @@ class DigestWriter:
 ## Task
 Create a concise, well-organized digest that:
 
-1. **Executive Summary** (2-5 sentences): What's most important for this developer this week?
+1. **Executive Summary** (2-5 sentences): What's most important for this developer now?
 
 2. **Top Picks** ({config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL.
 
@@ -84,7 +84,7 @@ Write in a friendly, concise tone. Use markdown formatting. Focus on actionable 
             Formatted digest as a markdown string.
         """
         if not scored_articles:
-            return "# Your Weekly Digest\n\nNo relevant articles were found matching your recent activity."
+            return "# Your Digest\n\nNo relevant articles were found matching your recent activity."
 
         prompt = self._build_digest_prompt(profile_summary, scored_articles)
 
