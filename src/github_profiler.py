@@ -233,10 +233,17 @@ class GitHubProfiler:
 
                             # Truncate individual patch if too large
                             if len(patch) > config.MAX_DIFF_PATCH_SIZE:
-                                patch = patch[: config.MAX_DIFF_PATCH_SIZE] + "\n... (truncated)"
+                                patch = (
+                                    patch[: config.MAX_DIFF_PATCH_SIZE]
+                                    + "\n... (truncated)"
+                                )
 
                             # Check if adding this would exceed total limit
-                            part = f"--- {filename}\n{patch}" if patch else f"--- {filename}"
+                            part = (
+                                f"--- {filename}\n{patch}"
+                                if patch
+                                else f"--- {filename}"
+                            )
                             if total_size + len(part) > config.MAX_DIFF_TOTAL_SIZE:
                                 diff_parts.append("... (remaining files truncated)")
                                 break

@@ -201,7 +201,9 @@ def cmd_digest(args):
             print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
             title = datetime.now().strftime("%Y-%m-%d %H:%M")
             with GitHubProfiler() as profiler:
-                issue_url = profiler.create_issue(config.DIGEST_ISSUE_REPO, title, digest)
+                issue_url = profiler.create_issue(
+                    config.DIGEST_ISSUE_REPO, title, digest
+                )
             print(f"Issue created: {issue_url}")
 
         if not args.output and not args.post_issue:
