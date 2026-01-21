@@ -34,6 +34,13 @@ MAX_PRS = 50
 # Maximum issues to fetch
 MAX_ISSUES = 50
 
+# Maximum size (in characters) for a single file's diff patch
+# Patches larger than this will be truncated
+MAX_DIFF_PATCH_SIZE = 2000
+
+# Maximum total diff size per commit (sum of all file patches)
+MAX_DIFF_TOTAL_SIZE = 10000
+
 # =============================================================================
 # RSS Feed Settings
 # =============================================================================

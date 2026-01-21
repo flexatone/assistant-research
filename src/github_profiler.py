@@ -224,12 +224,26 @@ class GitHubProfiler:
                         )
                         stats = detailed.get("stats", stats)
 
-                        # Build diff from files
+                        # Build diff from files, respecting size limits
                         diff_parts = []
+                        total_size = 0
                         for file in detailed.get("files", []):
-                            diff_parts.append(f"--- {file.get('filename', 'unknown')}")
-                            if file.get("patch"):
-                                diff_parts.append(file["patch"])
+                            filename = file.get("filename", "unknown")
+                            patch = file.get("patch", "")
+
+                            # Truncate individual patch if too large
+                            if len(patch) > config.MAX_DIFF_PATCH_SIZE:
+                                patch = patch[: config.MAX_DIFF_PATCH_SIZE] + "\n... (truncated)"
+
+                            # Check if adding this would exceed total limit
+                            part = f"--- {filename}\n{patch}" if patch else f"--- {filename}"
+                            if total_size + len(part) > config.MAX_DIFF_TOTAL_SIZE:
+                                diff_parts.append("... (remaining files truncated)")
+                                break
+
+                            diff_parts.append(part)
+                            total_size += len(part)
+
                         diff = "\n".join(diff_parts) if diff_parts else None
                     except httpx.HTTPStatusError:
                         pass  # Skip diff if we can't fetch it
