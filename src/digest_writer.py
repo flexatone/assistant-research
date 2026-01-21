@@ -58,9 +58,9 @@ class DigestWriter:
 ## Task
 Create a concise, well-organized digest that:
 
-1. **Executive Summary** (2-3 sentences): What's most important for this developer this week?
+1. **Executive Summary** (2-5 sentences): What's most important for this developer this week?
 
-2. **Top Picks** (3-5 articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL.
+2. **Top Picks** ({config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL.
 
 3. **Worth a Look** (remaining articles): Quick one-line mentions of other relevant articles, grouped by theme if possible. Include URLs.
 

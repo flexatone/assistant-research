@@ -405,3 +405,23 @@ class GitHubProfiler:
             page += 1
 
         return issues[:limit]
+
+    def create_issue(self, repo: str, title: str, body: str) -> str:
+        """
+        Create a new issue in a repository.
+
+        Args:
+            repo: Repository full name (e.g., "owner/repo").
+            title: Issue title.
+            body: Issue body (markdown).
+
+        Returns:
+            URL of the created issue.
+        """
+        response = self.client.post(
+            f"/repos/{repo}/issues",
+            json={"title": title, "body": body},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["html_url"]

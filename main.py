@@ -3,6 +3,7 @@
 
 import argparse
 import sys
+from datetime import datetime
 
 from src.github_profiler import GitHubProfiler
 from src.profile_builder import ProfileBuilder
@@ -191,7 +192,19 @@ def cmd_digest(args):
             with open(args.output, "w") as f:
                 f.write(digest)
             print(f"Digest written to {args.output}")
-        else:
+
+        if args.post_issue:
+            if not config.DIGEST_ISSUE_REPO:
+                print("Error: DIGEST_ISSUE_REPO not configured", file=sys.stderr)
+                sys.exit(1)
+
+            print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
+            title = datetime.now().strftime("%Y-%m-%d %H:%M")
+            with GitHubProfiler() as profiler:
+                issue_url = profiler.create_issue(config.DIGEST_ISSUE_REPO, title, digest)
+            print(f"Issue created: {issue_url}")
+
+        if not args.output and not args.post_issue:
             print(digest)
 
     except ValueError as e:
@@ -229,6 +242,11 @@ def main():
     )
     digest_parser.add_argument(
         "-o", "--output", help="Write digest to file instead of stdout"
+    )
+    digest_parser.add_argument(
+        "--post-issue",
+        action="store_true",
+        help="Post digest as a GitHub issue (requires DIGEST_ISSUE_REPO config)",
     )
     digest_parser.set_defaults(func=cmd_digest)
 

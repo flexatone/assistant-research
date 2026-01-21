@@ -50,8 +50,6 @@ DEFAULT_FEEDS = [
     ("Hacker News", "https://hnrss.org/frontpage"),
     ("Lobsters", "https://lobste.rs/rss"),
     ("dev.to", "https://dev.to/feed"),
-    # ("ArXiv CS", "http://arxiv.org/rss/cs"),
-    # ("Python Weekly", "https://us2.campaign-archive.com/feed?u=e2e180baf855ac797ef407fc7&id=9e26887fc5"),
     ("Rust Blog", "https://blog.rust-lang.org/feed.xml"),
     ("Krebs on Security", "https://krebsonsecurity.com/feed"),
     ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
@@ -87,3 +85,10 @@ DIGEST_MODEL = "claude-sonnet-4-20250514"
 
 # Maximum tokens for digest output
 DIGEST_MAX_TOKENS = 4096
+
+# Number of top picks to highlight in the digest
+DIGEST_TOP_PICKS = 10
+
+# Repository to post digest issues to (owner/repo format)
+# If None, --post-issue will fail
+DIGEST_ISSUE_REPO: str | None = "flexatone/assistant-research"
