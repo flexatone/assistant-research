@@ -8,6 +8,7 @@ from src.github_profiler import GitHubProfiler
 from src.profile_builder import ProfileBuilder
 from src.rss_searcher import RSSSearcher
 from src.relevance_scorer import RelevanceScorer
+from src.digest_writer import DigestWriter
 from src import config
 
 
@@ -108,6 +109,56 @@ def cmd_search(args):
         sys.exit(1)
 
 
+def cmd_digest(args):
+    """Generate a full digest: profile + search + summarize."""
+    print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
+
+    try:
+        # Build the profile first
+        with GitHubProfiler() as profiler:
+            builder = ProfileBuilder(profiler)
+            profile = builder.build_profile()
+            profile_summary = builder.summarize_for_llm(include_diffs=False)
+
+        print(f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits")
+        print()
+
+        # Fetch articles from RSS feeds
+        print(f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds...")
+        searcher = RSSSearcher()
+        articles = searcher.fetch_all_feeds()
+        print(f"Found {len(articles)} articles")
+        print()
+
+        if not articles:
+            print("No articles found in feeds.")
+            return
+
+        # Score articles for relevance
+        print(f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})...")
+        scorer = RelevanceScorer()
+        scored_articles = scorer.score_articles(profile_summary, articles)
+        print(f"Found {len(scored_articles)} relevant articles")
+        print()
+
+        # Generate digest
+        print("Generating digest...")
+        writer = DigestWriter()
+        digest = writer.generate_digest(profile_summary, scored_articles)
+        print()
+
+        if args.output:
+            with open(args.output, "w") as f:
+                f.write(digest)
+            print(f"Digest written to {args.output}")
+        else:
+            print(digest)
+
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Research assistant - profile GitHub activity and find relevant articles"
@@ -129,6 +180,14 @@ def main():
         help="Write results to file instead of stdout"
     )
     search_parser.set_defaults(func=cmd_search)
+
+    # Digest command
+    digest_parser = subparsers.add_parser("digest", help="Generate full digest (profile + search + summarize)")
+    digest_parser.add_argument(
+        "-o", "--output",
+        help="Write digest to file instead of stdout"
+    )
+    digest_parser.set_defaults(func=cmd_digest)
 
     args = parser.parse_args()
 

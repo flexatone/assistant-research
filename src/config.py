@@ -66,3 +66,13 @@ SCORING_MODEL = "claude-sonnet-4-20250514"
 
 # Maximum articles to score in a single batch
 SCORING_BATCH_SIZE = 10
+
+# =============================================================================
+# Digest Generation Settings
+# =============================================================================
+
+# Model to use for digest generation (more capable for synthesis)
+DIGEST_MODEL = "claude-sonnet-4-20250514"
+
+# Maximum tokens for digest output
+DIGEST_MAX_TOKENS = 4096
