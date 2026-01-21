@@ -10,7 +10,7 @@ from . import config
 from .rss_searcher import Article
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScoredArticle:
     """An article with its relevance score and explanation."""
     article: Article

@@ -10,7 +10,7 @@ import feedparser
 from . import config
 
 
-@dataclass
+@dataclass(frozen=True)
 class Article:
     """An article from an RSS feed."""
     title: str

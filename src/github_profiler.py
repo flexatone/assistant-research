@@ -9,7 +9,7 @@ import httpx
 from . import config
 
 
-@dataclass
+@dataclass(frozen=True)
 class Repo:
     """Repository metadata."""
     full_name: str
@@ -19,7 +19,7 @@ class Repo:
     pushed_at: Optional[datetime]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Commit:
     """Commit data with optional diff."""
     sha: str
@@ -33,7 +33,7 @@ class Commit:
     diff: Optional[str] = None  # Full diff if INCLUDE_DIFFS is True
 
 
-@dataclass
+@dataclass(frozen=True)
 class PullRequest:
     """Pull request data."""
     number: int
@@ -46,7 +46,7 @@ class PullRequest:
     merged_at: Optional[datetime]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Issue:
     """Issue data."""
     number: int

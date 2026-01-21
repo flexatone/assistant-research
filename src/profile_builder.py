@@ -8,7 +8,7 @@ from .github_profiler import GitHubProfiler, Commit, PullRequest, Issue, Repo
 from . import config
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommitSummary:
     """Summary of a commit for the profile."""
     sha: str
@@ -20,7 +20,7 @@ class CommitSummary:
     diff: str | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class PRSummary:
     """Summary of a pull request for the profile."""
     number: int
@@ -31,7 +31,7 @@ class PRSummary:
     created_at: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class IssueSummary:
     """Summary of an issue for the profile."""
     number: int
@@ -43,7 +43,7 @@ class IssueSummary:
     created_at: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class RepoSummary:
     """Summary of a repository for the profile."""
     full_name: str
@@ -53,7 +53,7 @@ class RepoSummary:
     commit_count: int = 0
 
 
-@dataclass
+@dataclass(frozen=True)
 class ActivityProfile:
     """Aggregated activity profile from GitHub."""
     username: str
