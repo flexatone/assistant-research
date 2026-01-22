@@ -84,9 +84,9 @@ SCORING_BATCH_SIZE = 10
 # =============================================================================
 
 # Model to use for digest generation (more capable for synthesis)
-DIGEST_MODEL = "claude-sonnet-4-20250514"
+DIGEST_MODEL = "claude-opus-4-5-20250514"
 
-# Maximum tokens for digest output
+# Maximum tokens for digest output; 32k is max for opus
 DIGEST_MAX_TOKENS = 4096
 
 # Number of top picks to highlight in the digest

@@ -367,6 +367,10 @@ class GitHubProfiler:
         username = self.get_authenticated_user()
         query = f"author:{username} is:issue created:>={since.strftime('%Y-%m-%d')}"
 
+        # Exclude digest issues repo to avoid feedback loop
+        if config.DIGEST_ISSUE_REPO:
+            query += f" -repo:{config.DIGEST_ISSUE_REPO}"
+
         issues = []
         page = 1
         per_page = min(limit, 100)

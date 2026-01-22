@@ -4,6 +4,7 @@
 import argparse
 import sys
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from src.github_profiler import GitHubProfiler
 from src.profile_builder import ProfileBuilder
@@ -199,7 +200,8 @@ def cmd_digest(args):
                 sys.exit(1)
 
             print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
-            title = datetime.now().strftime("%Y-%m-%d %H:%M")
+            pacific = ZoneInfo("America/Los_Angeles")
+            title = datetime.now(pacific).strftime("Digest: %Y-%m-%d %H:%M")
             with GitHubProfiler() as profiler:
                 issue_url = profiler.create_issue(
                     config.DIGEST_ISSUE_REPO, title, digest

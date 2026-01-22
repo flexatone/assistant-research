@@ -42,9 +42,9 @@ Create a concise, well-organized digest that:
 
 1. **Executive Summary** (2-5 sentences): What's most important for this developer now?
 
-2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL.
+2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL and relevance score.
 
-3. **Worth a Look** (remaining articles): Quick one-line mentions of other relevant articles, grouped by theme if possible. Include URLs.
+3. **Worth a Look** (remaining articles): Quick one-line mentions of other relevant articles, grouped by theme if possible. Include URLs and relevance scores.
 
 4. **Trends & Insights**: Any patterns you notice across the articles that relate to the developer's work (e.g., "Several articles about X which connects to your work on Y").
 
