@@ -1,4 +1,4 @@
-"""Configuration settings for the research assistant."""
+'''Configuration settings for the research assistant.'''
 
 import os
 from dotenv import load_dotenv

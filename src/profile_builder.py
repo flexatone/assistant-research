@@ -1,4 +1,4 @@
-"""Aggregates GitHub data into a structured activity profile."""
+'''Aggregates GitHub data into a structured activity profile.'''
 
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -11,7 +11,7 @@ from . import config
 
 @dataclass(frozen=True)
 class CommitSummary:
-    """Summary of a commit for the profile."""
+    '''Summary of a commit for the profile.'''
 
     sha: str
     repo: str
@@ -24,7 +24,7 @@ class CommitSummary:
 
 @dataclass(frozen=True)
 class PRSummary:
-    """Summary of a pull request for the profile."""
+    '''Summary of a pull request for the profile.'''
 
     number: int
     repo: str
@@ -36,7 +36,7 @@ class PRSummary:
 
 @dataclass(frozen=True)
 class IssueSummary:
-    """Summary of an issue for the profile."""
+    '''Summary of an issue for the profile.'''
 
     number: int
     repo: str
@@ -49,7 +49,7 @@ class IssueSummary:
 
 @dataclass(frozen=True)
 class RepoSummary:
-    """Summary of a repository for the profile."""
+    '''Summary of a repository for the profile.'''
 
     full_name: str
     description: str | None
@@ -60,7 +60,7 @@ class RepoSummary:
 
 @dataclass(frozen=True)
 class ActivityProfile:
-    """Aggregated activity profile from GitHub."""
+    '''Aggregated activity profile from GitHub.'''
 
     username: str
     time_range: tuple[datetime, datetime]
@@ -73,21 +73,21 @@ class ActivityProfile:
 
 
 class ProfileBuilder:
-    """Aggregates GitHub data into a structured profile."""
+    '''Aggregates GitHub data into a structured profile.'''
 
     def __init__(self, profiler: GitHubProfiler):
         self.profiler = profiler
         self._profile: ActivityProfile | None = None
 
     def build_profile(self) -> ActivityProfile:
-        """
+        '''
         Build an activity profile from GitHub data.
 
         Uses config.PROFILE_DAYS and config.INCLUDE_DIFFS for settings.
 
         Returns:
             ActivityProfile with aggregated data.
-        """
+        '''
         days = config.PROFILE_DAYS
         now = datetime.now(timezone.utc)
         since = now - timedelta(days=days)
@@ -203,7 +203,7 @@ class ProfileBuilder:
         return self._profile
 
     def summarize_for_llm(self, include_diffs: bool | None = None) -> str:
-        """
+        '''
         Format the profile as a text summary suitable for an LLM.
 
         Args:
@@ -211,7 +211,7 @@ class ProfileBuilder:
 
         Returns:
             Formatted string summary of the activity profile.
-        """
+        '''
         if self._profile is None:
             self.build_profile()
 

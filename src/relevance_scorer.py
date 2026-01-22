@@ -1,4 +1,4 @@
-"""LLM-based relevance scoring for articles."""
+'''LLM-based relevance scoring for articles.'''
 
 import json
 from dataclasses import dataclass
@@ -11,7 +11,7 @@ from .rss_searcher import Article
 
 @dataclass(frozen=True)
 class ScoredArticle:
-    """An article with its relevance score and explanation."""
+    '''An article with its relevance score and explanation.'''
 
     article: Article
     score: float  # 0-1
@@ -19,12 +19,12 @@ class ScoredArticle:
 
 
 class RelevanceScorer(AnthropicClientBase):
-    """Uses Anthropic API to score article relevance to a user profile."""
+    '''Uses Anthropic API to score article relevance to a user profile.'''
 
     def _build_scoring_prompt(
         self, profile_summary: str, articles: list[Article]
     ) -> str:
-        """Build the prompt for scoring articles."""
+        '''Build the prompt for scoring articles.'''
         articles_text = []
         for i, article in enumerate(articles):
             summary_part = f"\n   Summary: {article.summary}" if article.summary else ""
@@ -32,7 +32,7 @@ class RelevanceScorer(AnthropicClientBase):
                 f"{i + 1}. [{article.source}] {article.title}{summary_part}"
             )
 
-        return f"""You are evaluating articles for relevance to a software developer's interests based on their recent GitHub activity.
+        return f'''You are evaluating articles for relevance to a software developer's interests based on their recent GitHub activity.
 
 ## Developer Profile
 {profile_summary}
@@ -53,12 +53,12 @@ Respond with a JSON array of objects, one per article, in order:
   ...
 ]
 
-Only output the JSON array, no other text."""
+Only output the JSON array, no other text.'''
 
     def _parse_scores(
         self, response_text: str, articles: list[Article]
     ) -> list[ScoredArticle]:
-        """Parse the LLM response into scored articles."""
+        '''Parse the LLM response into scored articles.'''
         # Extract JSON from the response
         text = response_text.strip()
 
@@ -91,7 +91,7 @@ Only output the JSON array, no other text."""
     def score_batch(
         self, profile_summary: str, articles: list[Article]
     ) -> list[ScoredArticle]:
-        """
+        '''
         Score a batch of articles for relevance.
 
         Args:
@@ -100,7 +100,7 @@ Only output the JSON array, no other text."""
 
         Returns:
             List of ScoredArticle objects with scores and explanations.
-        """
+        '''
         if not articles:
             return []
 
@@ -121,7 +121,7 @@ Only output the JSON array, no other text."""
         articles: list[Article],
         threshold: Optional[float] = None,
     ) -> list[ScoredArticle]:
-        """
+        '''
         Score all articles and filter by relevance threshold.
 
         Args:
@@ -131,7 +131,7 @@ Only output the JSON array, no other text."""
 
         Returns:
             List of ScoredArticle objects above the threshold, sorted by score descending.
-        """
+        '''
         threshold = threshold if threshold is not None else config.RELEVANCE_THRESHOLD
         batch_size = config.SCORING_BATCH_SIZE
 
