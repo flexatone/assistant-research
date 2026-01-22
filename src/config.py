@@ -84,7 +84,7 @@ SCORING_BATCH_SIZE = 10
 # =============================================================================
 
 # Model to use for digest generation (more capable for synthesis)
-DIGEST_MODEL = "claude-opus-4-5-20250514"
+DIGEST_MODEL = "claude-opus-4-5-20251101"
 
 # Maximum tokens for digest output; 32k is max for opus
 DIGEST_MAX_TOKENS = 4096
