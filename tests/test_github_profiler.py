@@ -37,22 +37,24 @@ class TestGetUserRepos:
     def test_returns_repos(self, mock_client_class):
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
-        mock_client.get.return_value = mock_response([
-            {
-                "full_name": "user/repo1",
-                "description": "Test repo",
-                "language": "Python",
-                "topics": ["cli", "tool"],
-                "pushed_at": "2024-01-15T10:00:00Z",
-            },
-            {
-                "full_name": "user/repo2",
-                "description": None,
-                "language": "Rust",
-                "topics": [],
-                "pushed_at": "2024-01-14T10:00:00Z",
-            },
-        ])
+        mock_client.get.return_value = mock_response(
+            [
+                {
+                    "full_name": "user/repo1",
+                    "description": "Test repo",
+                    "language": "Python",
+                    "topics": ["cli", "tool"],
+                    "pushed_at": "2024-01-15T10:00:00Z",
+                },
+                {
+                    "full_name": "user/repo2",
+                    "description": None,
+                    "language": "Rust",
+                    "topics": [],
+                    "pushed_at": "2024-01-14T10:00:00Z",
+                },
+            ]
+        )
 
         with GitHubProfiler(token="fake-token") as profiler:
             repos = profiler.get_user_repos(limit=10)
@@ -67,10 +69,18 @@ class TestGetUserRepos:
     def test_respects_limit(self, mock_client_class):
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
-        mock_client.get.return_value = mock_response([
-            {"full_name": f"user/repo{i}", "description": None, "language": None, "topics": [], "pushed_at": None}
-            for i in range(10)
-        ])
+        mock_client.get.return_value = mock_response(
+            [
+                {
+                    "full_name": f"user/repo{i}",
+                    "description": None,
+                    "language": None,
+                    "topics": [],
+                    "pushed_at": None,
+                }
+                for i in range(10)
+            ]
+        )
 
         with GitHubProfiler(token="fake-token") as profiler:
             repos = profiler.get_user_repos(limit=3)
@@ -91,21 +101,28 @@ class TestGetRecentCommits:
                 return mock_response({"login": "testuser"})
             elif endpoint == "/repos/user/repo/commits":
                 # List commits endpoint
-                return mock_response([
-                    {
-                        "sha": "abc123",
-                        "commit": {
-                            "message": "Fix bug",
-                            "author": {"name": "Test User", "date": "2024-01-15T10:00:00Z"},
+                return mock_response(
+                    [
+                        {
+                            "sha": "abc123",
+                            "commit": {
+                                "message": "Fix bug",
+                                "author": {
+                                    "name": "Test User",
+                                    "date": "2024-01-15T10:00:00Z",
+                                },
+                            },
                         },
-                    },
-                ])
+                    ]
+                )
             elif endpoint == "/repos/user/repo/commits/abc123":
                 # Single commit detail endpoint
-                return mock_response({
-                    "stats": {"total": 5, "additions": 10, "deletions": 3},
-                    "files": [{"filename": "test.py", "patch": "+line1\n-line2"}],
-                })
+                return mock_response(
+                    {
+                        "stats": {"total": 5, "additions": 10, "deletions": 3},
+                        "files": [{"filename": "test.py", "patch": "+line1\n-line2"}],
+                    }
+                )
             return mock_response([])
 
         mock_client.get.side_effect = get_side_effect
@@ -129,15 +146,20 @@ class TestGetRecentCommits:
             if endpoint == "/user":
                 return mock_response({"login": "testuser"})
             elif "/commits" in endpoint:
-                return mock_response([
-                    {
-                        "sha": "abc123",
-                        "commit": {
-                            "message": "Fix bug",
-                            "author": {"name": "Test User", "date": "2024-01-15T10:00:00Z"},
+                return mock_response(
+                    [
+                        {
+                            "sha": "abc123",
+                            "commit": {
+                                "message": "Fix bug",
+                                "author": {
+                                    "name": "Test User",
+                                    "date": "2024-01-15T10:00:00Z",
+                                },
+                            },
                         },
-                    },
-                ])
+                    ]
+                )
             return mock_response([])
 
         mock_client.get.side_effect = get_side_effect
@@ -161,20 +183,22 @@ class TestGetRecentPRs:
             if endpoint == "/user":
                 return mock_response({"login": "testuser"})
             elif endpoint == "/search/issues":
-                return mock_response({
-                    "items": [
-                        {
-                            "number": 42,
-                            "title": "Add feature",
-                            "body": "This PR adds...",
-                            "state": "open",
-                            "user": {"login": "testuser"},
-                            "created_at": "2024-01-15T10:00:00Z",
-                            "repository_url": "https://api.github.com/repos/user/repo",
-                            "pull_request": {"merged_at": None},
-                        },
-                    ]
-                })
+                return mock_response(
+                    {
+                        "items": [
+                            {
+                                "number": 42,
+                                "title": "Add feature",
+                                "body": "This PR adds...",
+                                "state": "open",
+                                "user": {"login": "testuser"},
+                                "created_at": "2024-01-15T10:00:00Z",
+                                "repository_url": "https://api.github.com/repos/user/repo",
+                                "pull_request": {"merged_at": None},
+                            },
+                        ]
+                    }
+                )
             return mock_response([])
 
         mock_client.get.side_effect = get_side_effect
@@ -200,20 +224,22 @@ class TestGetRecentIssues:
             if endpoint == "/user":
                 return mock_response({"login": "testuser"})
             elif endpoint == "/search/issues":
-                return mock_response({
-                    "items": [
-                        {
-                            "number": 99,
-                            "title": "Bug report",
-                            "body": "Found a bug...",
-                            "state": "open",
-                            "user": {"login": "testuser"},
-                            "created_at": "2024-01-15T10:00:00Z",
-                            "repository_url": "https://api.github.com/repos/user/repo",
-                            "labels": [{"name": "bug"}, {"name": "urgent"}],
-                        },
-                    ]
-                })
+                return mock_response(
+                    {
+                        "items": [
+                            {
+                                "number": 99,
+                                "title": "Bug report",
+                                "body": "Found a bug...",
+                                "state": "open",
+                                "user": {"login": "testuser"},
+                                "created_at": "2024-01-15T10:00:00Z",
+                                "repository_url": "https://api.github.com/repos/user/repo",
+                                "labels": [{"name": "bug"}, {"name": "urgent"}],
+                            },
+                        ]
+                    }
+                )
             return mock_response([])
 
         mock_client.get.side_effect = get_side_effect
@@ -234,9 +260,9 @@ class TestCreateIssue:
     def test_creates_issue(self, mock_client_class):
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
-        mock_client.post.return_value = mock_response({
-            "html_url": "https://github.com/user/repo/issues/123"
-        })
+        mock_client.post.return_value = mock_response(
+            {"html_url": "https://github.com/user/repo/issues/123"}
+        )
 
         with GitHubProfiler(token="fake-token") as profiler:
             url = profiler.create_issue("user/repo", "Test Issue", "Issue body")

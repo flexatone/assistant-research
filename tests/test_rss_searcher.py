@@ -35,10 +35,22 @@ class TestFetchFeed:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_success(self, mock_parse):
-        mock_parse.return_value = make_feed([
-            make_entry("Article 1", "https://example.com/1", "Summary 1", datetime(2024, 1, 15)),
-            make_entry("Article 2", "https://example.com/2", "Summary 2", datetime(2024, 1, 14)),
-        ])
+        mock_parse.return_value = make_feed(
+            [
+                make_entry(
+                    "Article 1",
+                    "https://example.com/1",
+                    "Summary 1",
+                    datetime(2024, 1, 15),
+                ),
+                make_entry(
+                    "Article 2",
+                    "https://example.com/2",
+                    "Summary 2",
+                    datetime(2024, 1, 14),
+                ),
+            ]
+        )
 
         searcher = RSSSearcher(feeds=[])
         articles = searcher.fetch_feed("Test Feed", "https://test.com/feed")
@@ -60,10 +72,9 @@ class TestFetchFeed:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_limit(self, mock_parse):
-        mock_parse.return_value = make_feed([
-            make_entry(f"Article {i}", f"https://example.com/{i}")
-            for i in range(10)
-        ])
+        mock_parse.return_value = make_feed(
+            [make_entry(f"Article {i}", f"https://example.com/{i}") for i in range(10)]
+        )
 
         searcher = RSSSearcher(feeds=[])
         articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=3)
@@ -74,8 +85,7 @@ class TestFetchFeed:
     def test_fetch_feed_bozo_with_entries(self, mock_parse):
         """Bozo feeds with entries should still return articles."""
         mock_parse.return_value = make_feed(
-            [make_entry("Article 1", "https://example.com/1")],
-            bozo=True
+            [make_entry("Article 1", "https://example.com/1")], bozo=True
         )
 
         searcher = RSSSearcher(feeds=[])
@@ -100,10 +110,12 @@ class TestFetchFeed:
         entry_no_link.link = None
         entry_no_link.id = None
 
-        mock_parse.return_value = make_feed([
-            entry_no_link,
-            make_entry("Has Link", "https://example.com/1"),
-        ])
+        mock_parse.return_value = make_feed(
+            [
+                entry_no_link,
+                make_entry("Has Link", "https://example.com/1"),
+            ]
+        )
 
         searcher = RSSSearcher(feeds=[])
         articles = searcher.fetch_feed("Test Feed", "https://test.com/feed")
@@ -117,14 +129,22 @@ class TestFetchAllFeeds:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_all_feeds(self, mock_parse):
-        mock_parse.return_value = make_feed([
-            make_entry("Article 1", "https://example.com/1", published=datetime(2024, 1, 15)),
-        ])
+        mock_parse.return_value = make_feed(
+            [
+                make_entry(
+                    "Article 1",
+                    "https://example.com/1",
+                    published=datetime(2024, 1, 15),
+                ),
+            ]
+        )
 
-        searcher = RSSSearcher(feeds=[
-            ("Feed A", "https://a.com/feed"),
-            ("Feed B", "https://b.com/feed"),
-        ])
+        searcher = RSSSearcher(
+            feeds=[
+                ("Feed A", "https://a.com/feed"),
+                ("Feed B", "https://b.com/feed"),
+            ]
+        )
         articles = searcher.fetch_all_feeds()
 
         assert len(articles) == 2
@@ -134,16 +154,30 @@ class TestFetchAllFeeds:
     def test_fetch_all_feeds_sorted_by_date(self, mock_parse):
         def side_effect(url):
             if "a.com" in url:
-                return make_feed([make_entry("Old", "https://a.com/1", published=datetime(2024, 1, 1))])
+                return make_feed(
+                    [
+                        make_entry(
+                            "Old", "https://a.com/1", published=datetime(2024, 1, 1)
+                        )
+                    ]
+                )
             else:
-                return make_feed([make_entry("New", "https://b.com/1", published=datetime(2024, 1, 15))])
+                return make_feed(
+                    [
+                        make_entry(
+                            "New", "https://b.com/1", published=datetime(2024, 1, 15)
+                        )
+                    ]
+                )
 
         mock_parse.side_effect = side_effect
 
-        searcher = RSSSearcher(feeds=[
-            ("Feed A", "https://a.com/feed"),
-            ("Feed B", "https://b.com/feed"),
-        ])
+        searcher = RSSSearcher(
+            feeds=[
+                ("Feed A", "https://a.com/feed"),
+                ("Feed B", "https://b.com/feed"),
+            ]
+        )
         articles = searcher.fetch_all_feeds()
 
         assert articles[0].title == "New"
@@ -155,13 +189,17 @@ class TestFetchAllFeedsWithResults:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_returns_feed_results(self, mock_parse):
-        mock_parse.return_value = make_feed([
-            make_entry("Article 1", "https://example.com/1"),
-        ])
+        mock_parse.return_value = make_feed(
+            [
+                make_entry("Article 1", "https://example.com/1"),
+            ]
+        )
 
-        searcher = RSSSearcher(feeds=[
-            ("Feed A", "https://a.com/feed"),
-        ])
+        searcher = RSSSearcher(
+            feeds=[
+                ("Feed A", "https://a.com/feed"),
+            ]
+        )
         results = searcher.fetch_all_feeds_with_results()
 
         assert len(results) == 1
@@ -185,7 +223,9 @@ class TestFetchAllFeedsWithResults:
         searcher = RSSSearcher(feeds=[("Bad", "https://bad.com/feed")])
 
         # Patch fetch_feed to raise an exception
-        with patch.object(searcher, "fetch_feed", side_effect=Exception("Network error")):
+        with patch.object(
+            searcher, "fetch_feed", side_effect=Exception("Network error")
+        ):
             results = searcher.fetch_all_feeds_with_results()
 
         assert results[0].ok is False
@@ -195,11 +235,13 @@ class TestFetchAllFeedsWithResults:
     def test_maintains_feed_order(self, mock_parse):
         mock_parse.return_value = make_feed([make_entry("Art", "https://x.com/1")])
 
-        searcher = RSSSearcher(feeds=[
-            ("Feed C", "https://c.com/feed"),
-            ("Feed A", "https://a.com/feed"),
-            ("Feed B", "https://b.com/feed"),
-        ])
+        searcher = RSSSearcher(
+            feeds=[
+                ("Feed C", "https://c.com/feed"),
+                ("Feed A", "https://a.com/feed"),
+                ("Feed B", "https://b.com/feed"),
+            ]
+        )
         results = searcher.fetch_all_feeds_with_results()
 
         assert [r.name for r in results] == ["Feed C", "Feed A", "Feed B"]

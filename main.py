@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''CLI for the research assistant.'''
+"""CLI for the research assistant."""
 
 import argparse
 import sys
@@ -14,7 +14,7 @@ from src import config
 
 
 def cmd_profile(args):
-    '''Generate and display the GitHub activity profile.'''
+    """Generate and display the GitHub activity profile."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
     print(f"Include diffs: {config.INCLUDE_DIFFS}")
     print()
@@ -44,7 +44,7 @@ def cmd_profile(args):
 
 
 def cmd_search(args):
-    '''Search RSS feeds for relevant articles based on GitHub profile.'''
+    """Search RSS feeds for relevant articles based on GitHub profile."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
 
     try:
@@ -123,7 +123,7 @@ def cmd_search(args):
 
 
 def cmd_test_feeds(_args):
-    '''Test all configured RSS feeds and report which are parsable.'''
+    """Test all configured RSS feeds and report which are parsable."""
     searcher = RSSSearcher()
     print(f"Testing {len(searcher.feeds)} feeds...\n")
 
@@ -145,7 +145,7 @@ def cmd_test_feeds(_args):
 
 
 def cmd_digest(args):
-    '''Generate a full digest: profile + search + summarize.'''
+    """Generate a full digest: profile + search + summarize."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
 
     try:
