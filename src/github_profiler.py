@@ -1,4 +1,4 @@
-'''GitHub API client for fetching user activity data.'''
+"""GitHub API client for fetching user activity data."""
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -11,7 +11,7 @@ from . import config
 
 @dataclass(frozen=True)
 class Repo:
-    '''Repository metadata.'''
+    """Repository metadata."""
 
     full_name: str
     description: Optional[str]
@@ -22,7 +22,7 @@ class Repo:
 
 @dataclass(frozen=True)
 class Commit:
-    '''Commit data with optional diff.'''
+    """Commit data with optional diff."""
 
     sha: str
     repo: str
@@ -37,7 +37,7 @@ class Commit:
 
 @dataclass(frozen=True)
 class PullRequest:
-    '''Pull request data.'''
+    """Pull request data."""
 
     number: int
     repo: str
@@ -51,7 +51,7 @@ class PullRequest:
 
 @dataclass(frozen=True)
 class Issue:
-    '''Issue data.'''
+    """Issue data."""
 
     number: int
     repo: str
@@ -64,7 +64,7 @@ class Issue:
 
 
 class GitHubProfiler:
-    '''Fetches activity data from GitHub API.'''
+    """Fetches activity data from GitHub API."""
 
     BASE_URL = "https://api.github.com"
 
@@ -95,24 +95,24 @@ class GitHubProfiler:
         self.client.close()
 
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict | list:
-        '''Make a GET request to the GitHub API.'''
+        """Make a GET request to the GitHub API."""
         response = self.client.get(endpoint, params=params)
         response.raise_for_status()
         return response.json()
 
     def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
-        '''Parse GitHub datetime string to datetime object.'''
+        """Parse GitHub datetime string to datetime object."""
         if not dt_str:
             return None
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
 
     def get_authenticated_user(self) -> str:
-        '''Get the username of the authenticated user.'''
+        """Get the username of the authenticated user."""
         data = self._get("/user")
         return data["login"]
 
     def get_user_repos(self, limit: Optional[int] = None) -> list[Repo]:
-        '''
+        """
         Fetch repositories the user has contributed to recently.
 
         Args:
@@ -120,7 +120,7 @@ class GitHubProfiler:
 
         Returns:
             List of Repo objects sorted by most recently pushed.
-        '''
+        """
         limit = limit or config.MAX_REPOS
 
         repos = []
@@ -166,7 +166,7 @@ class GitHubProfiler:
         include_diffs: Optional[bool] = None,
         limit: Optional[int] = None,
     ) -> list[Commit]:
-        '''
+        """
         Fetch recent commits from a repository.
 
         Args:
@@ -177,7 +177,7 @@ class GitHubProfiler:
 
         Returns:
             List of Commit objects.
-        '''
+        """
         days = days or config.PROFILE_DAYS
         include_diffs = (
             include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
@@ -280,7 +280,7 @@ class GitHubProfiler:
     def get_recent_prs(
         self, days: Optional[int] = None, limit: Optional[int] = None
     ) -> list[PullRequest]:
-        '''
+        """
         Fetch recent pull requests authored by the user.
 
         Args:
@@ -289,7 +289,7 @@ class GitHubProfiler:
 
         Returns:
             List of PullRequest objects.
-        '''
+        """
         days = days or config.PROFILE_DAYS
         limit = limit or config.MAX_PRS
 
@@ -348,7 +348,7 @@ class GitHubProfiler:
     def get_recent_issues(
         self, days: Optional[int] = None, limit: Optional[int] = None
     ) -> list[Issue]:
-        '''
+        """
         Fetch recent issues created by the user.
 
         Args:
@@ -357,7 +357,7 @@ class GitHubProfiler:
 
         Returns:
             List of Issue objects.
-        '''
+        """
         days = days or config.PROFILE_DAYS
         limit = limit or config.MAX_ISSUES
 
@@ -417,8 +417,46 @@ class GitHubProfiler:
 
         return issues[:limit]
 
+    def get_latest_issue(self, repo: str) -> Optional[Issue]:
+        """
+        Fetch the most recent issue from a repository.
+
+        Args:
+            repo: Repository full name (e.g., "owner/repo").
+
+        Returns:
+            The most recent Issue, or None if no issues exist.
+        """
+        try:
+            data = self._get(
+                f"/repos/{repo}/issues",
+                params={
+                    "state": "all",
+                    "sort": "created",
+                    "direction": "desc",
+                    "per_page": 1,
+                },
+            )
+
+            if not data:
+                return None
+
+            issue_data = data[0]
+            return Issue(
+                number=issue_data["number"],
+                repo=repo,
+                title=issue_data["title"],
+                body=issue_data.get("body"),
+                state=issue_data["state"],
+                author=issue_data["user"]["login"],
+                created_at=self._parse_datetime(issue_data["created_at"]),
+                labels=[label["name"] for label in issue_data.get("labels", [])],
+            )
+        except httpx.HTTPStatusError:
+            return None
+
     def create_issue(self, repo: str, title: str, body: str) -> str:
-        '''
+        """
         Create a new issue in a repository.
 
         Args:
@@ -428,7 +466,7 @@ class GitHubProfiler:
 
         Returns:
             URL of the created issue.
-        '''
+        """
         response = self.client.post(
             f"/repos/{repo}/issues",
             json={"title": title, "body": body},

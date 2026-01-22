@@ -1,4 +1,4 @@
-'''Tests for GitHubProfiler.'''
+"""Tests for GitHubProfiler."""
 
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
@@ -7,7 +7,7 @@ from src.github_profiler import GitHubProfiler, Repo, Commit, PullRequest, Issue
 
 
 def mock_response(json_data, status_code=200):
-    '''Create a mock httpx response.'''
+    """Create a mock httpx response."""
     response = MagicMock()
     response.json.return_value = json_data
     response.status_code = status_code
@@ -16,7 +16,7 @@ def mock_response(json_data, status_code=200):
 
 
 class TestGetAuthenticatedUser:
-    '''Tests for get_authenticated_user method.'''
+    """Tests for get_authenticated_user method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_returns_username(self, mock_client_class):
@@ -31,7 +31,7 @@ class TestGetAuthenticatedUser:
 
 
 class TestGetUserRepos:
-    '''Tests for get_user_repos method.'''
+    """Tests for get_user_repos method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_returns_repos(self, mock_client_class):
@@ -89,7 +89,7 @@ class TestGetUserRepos:
 
 
 class TestGetRecentCommits:
-    '''Tests for get_recent_commits method.'''
+    """Tests for get_recent_commits method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_returns_commits(self, mock_client_class):
@@ -172,7 +172,7 @@ class TestGetRecentCommits:
 
 
 class TestGetRecentPRs:
-    '''Tests for get_recent_prs method.'''
+    """Tests for get_recent_prs method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_returns_prs(self, mock_client_class):
@@ -213,7 +213,7 @@ class TestGetRecentPRs:
 
 
 class TestGetRecentIssues:
-    '''Tests for get_recent_issues method.'''
+    """Tests for get_recent_issues method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_returns_issues(self, mock_client_class):
@@ -254,7 +254,7 @@ class TestGetRecentIssues:
 
 
 class TestCreateIssue:
-    '''Tests for create_issue method.'''
+    """Tests for create_issue method."""
 
     @patch("src.github_profiler.httpx.Client")
     def test_creates_issue(self, mock_client_class):
@@ -276,7 +276,7 @@ class TestCreateIssue:
 
 
 class TestTokenRequired:
-    '''Tests for token validation.'''
+    """Tests for token validation."""
 
     def test_raises_without_token(self):
         with patch.dict("os.environ", {}, clear=True):

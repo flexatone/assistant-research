@@ -1,4 +1,4 @@
-'''Base class for Anthropic API clients.'''
+"""Base class for Anthropic API clients."""
 
 from typing import Optional
 
@@ -8,15 +8,15 @@ from . import config
 
 
 class AnthropicClientBase:
-    '''Base class providing common Anthropic client initialization.'''
+    """Base class providing common Anthropic client initialization."""
 
     def __init__(self, api_key: Optional[str] = None):
-        '''
+        """
         Initialize the Anthropic client.
 
         Args:
             api_key: Anthropic API key. Defaults to config.ANTHROPIC_API_KEY.
-        '''
+        """
         self.api_key = api_key or config.ANTHROPIC_API_KEY
         if not self.api_key:
             raise ValueError(

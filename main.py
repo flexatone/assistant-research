@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-'''CLI for the research assistant.'''
+"""CLI for the research assistant."""
 
 import argparse
+import re
 import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -14,8 +15,17 @@ from src.digest_writer import DigestWriter
 from src import config
 
 
+def extract_urls_from_text(text: str) -> frozenset[str]:
+    """Extract all URLs from markdown or plain text."""
+    if not text:
+        return frozenset()
+    # Match URLs in markdown links [text](url) and plain URLs
+    url_pattern = r'https?://[^\s\)\]>"\']+'
+    return frozenset(re.findall(url_pattern, text))
+
+
 def cmd_profile(args):
-    '''Generate and display the GitHub activity profile.'''
+    """Generate and display the GitHub activity profile."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
     print(f"Include diffs: {config.INCLUDE_DIFFS}")
     print()
@@ -45,7 +55,7 @@ def cmd_profile(args):
 
 
 def cmd_search(args):
-    '''Search RSS feeds for relevant articles based on GitHub profile.'''
+    """Search RSS feeds for relevant articles based on GitHub profile."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
 
     try:
@@ -124,7 +134,7 @@ def cmd_search(args):
 
 
 def cmd_test_feeds(_args):
-    '''Test all configured RSS feeds and report which are parsable.'''
+    """Test all configured RSS feeds and report which are parsable."""
     searcher = RSSSearcher()
     print(f"Testing {len(searcher.feeds)} feeds...\n")
 
@@ -146,7 +156,7 @@ def cmd_test_feeds(_args):
 
 
 def cmd_digest(args):
-    '''Generate a full digest: profile + search + summarize.'''
+    """Generate a full digest: profile + search + summarize."""
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
 
     try:
@@ -173,6 +183,19 @@ def cmd_digest(args):
         if not articles:
             print("No articles found in feeds.")
             return
+
+        # Deduplicate: remove articles that were in the previous digest
+        if config.DIGEST_ISSUE_REPO:
+            with GitHubProfiler() as profiler:
+                latest_issue = profiler.get_latest_issue(config.DIGEST_ISSUE_REPO)
+                if latest_issue and latest_issue.body:
+                    previous_urls = extract_urls_from_text(latest_issue.body)
+                    original_count = len(articles)
+                    articles = [a for a in articles if a.url not in previous_urls]
+                    deduped = original_count - len(articles)
+                    if deduped > 0:
+                        print(f"Filtered {deduped} articles from previous digest")
+                        print()
 
         # Score articles for relevance
         print(

@@ -1,4 +1,4 @@
-'''Tests for RSSSearcher.'''
+"""Tests for RSSSearcher."""
 
 from datetime import datetime
 from time import mktime
@@ -10,7 +10,7 @@ from src.rss_searcher import RSSSearcher, Article, FeedResult
 
 
 def make_entry(title: str, link: str, summary: str = None, published: datetime = None):
-    '''Create a mock feed entry.'''
+    """Create a mock feed entry."""
     entry = MagicMock()
     entry.title = title
     entry.link = link
@@ -23,7 +23,7 @@ def make_entry(title: str, link: str, summary: str = None, published: datetime =
 
 
 def make_feed(entries: list, bozo: bool = False):
-    '''Create a mock feed response.'''
+    """Create a mock feed response."""
     feed = MagicMock()
     feed.entries = entries
     feed.bozo = bozo
@@ -31,7 +31,7 @@ def make_feed(entries: list, bozo: bool = False):
 
 
 class TestFetchFeed:
-    '''Tests for fetch_feed method.'''
+    """Tests for fetch_feed method."""
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_success(self, mock_parse):
@@ -83,7 +83,7 @@ class TestFetchFeed:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_bozo_with_entries(self, mock_parse):
-        '''Bozo feeds with entries should still return articles.'''
+        """Bozo feeds with entries should still return articles."""
         mock_parse.return_value = make_feed(
             [make_entry("Article 1", "https://example.com/1")], bozo=True
         )
@@ -95,7 +95,7 @@ class TestFetchFeed:
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_bozo_no_entries(self, mock_parse):
-        '''Bozo feeds without entries should return empty.'''
+        """Bozo feeds without entries should return empty."""
         mock_parse.return_value = make_feed([], bozo=True)
 
         searcher = RSSSearcher(feeds=[])
@@ -125,7 +125,7 @@ class TestFetchFeed:
 
 
 class TestFetchAllFeeds:
-    '''Tests for fetch_all_feeds method.'''
+    """Tests for fetch_all_feeds method."""
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_all_feeds(self, mock_parse):
@@ -185,7 +185,7 @@ class TestFetchAllFeeds:
 
 
 class TestFetchAllFeedsWithResults:
-    '''Tests for fetch_all_feeds_with_results method.'''
+    """Tests for fetch_all_feeds_with_results method."""
 
     @patch("src.rss_searcher.feedparser.parse")
     def test_returns_feed_results(self, mock_parse):
@@ -219,7 +219,7 @@ class TestFetchAllFeedsWithResults:
         assert results[0].error == "No articles returned"
 
     def test_handles_fetch_feed_exception(self):
-        '''Exception in fetch_feed is caught and reported.'''
+        """Exception in fetch_feed is caught and reported."""
         searcher = RSSSearcher(feeds=[("Bad", "https://bad.com/feed")])
 
         # Patch fetch_feed to raise an exception
