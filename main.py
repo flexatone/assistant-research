@@ -42,12 +42,12 @@ def cmd_profile(args):
             print()
 
             if args.output:
-                summary = builder.summarize_for_llm()
+                summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
                 with open(args.output, "w") as f:
                     f.write(summary)
                 print(f"Profile written to {args.output}")
             else:
-                print(builder.summarize_for_llm())
+                print(builder.summarize_for_llm(config.INCLUDE_DIFFS))
 
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -63,7 +63,7 @@ def cmd_search(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm()
+            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
@@ -85,7 +85,7 @@ def cmd_search(args):
         print(
             f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})..."
         )
-        scorer = RelevanceScorer()
+        scorer = RelevanceScorer(config.ANTHROPIC_API_KEY)
         scored_articles = scorer.score_articles(profile_summary, articles)
         print(f"Found {len(scored_articles)} relevant articles")
         print()
@@ -162,7 +162,7 @@ def cmd_digest(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm()
+            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
@@ -204,14 +204,14 @@ def cmd_digest(args):
         print(
             f"Scoring articles for relevance (threshold: {config.RELEVANCE_THRESHOLD})..."
         )
-        scorer = RelevanceScorer()
+        scorer = RelevanceScorer(config.ANTHROPIC_API_KEY)
         scored_articles = scorer.score_articles(profile_summary, articles)
         print(f"Found {len(scored_articles)} relevant articles")
         print()
 
         # Generate digest
         print("Generating digest...")
-        writer = DigestWriter()
+        writer = DigestWriter(config.ANTHROPIC_API_KEY)
         digest = writer.generate_digest(profile_summary, scored_articles)
         print()
 

@@ -202,12 +202,12 @@ class ProfileBuilder:
 
         return self._profile
 
-    def summarize_for_llm(self, include_diffs: bool | None = None) -> str:
+    def summarize_for_llm(self, include_diffs: bool) -> str:
         """
         Format the profile as a text summary suitable for an LLM.
 
         Args:
-            include_diffs: Whether to include code diffs. Defaults to config.INCLUDE_DIFFS.
+            include_diffs: Whether to include code diffs.
 
         Returns:
             Formatted string summary of the activity profile.
@@ -216,10 +216,6 @@ class ProfileBuilder:
             self.build_profile()
 
         profile = self._profile
-        include_diffs = (
-            include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
-        )
-
         lines = [
             f"# GitHub Activity Profile for {profile.username}",
             f"Period: {profile.time_range[0].strftime('%Y-%m-%d')} to {profile.time_range[1].strftime('%Y-%m-%d')}",
@@ -279,7 +275,7 @@ class ProfileBuilder:
 
         # Recent commits
         if profile.recent_commits:
-            lines.append("## Recent Additions with Repositories")
+            lines.append("## Recent Additions within Repositories")
             for commit in profile.recent_commits:
                 lines.append(f"### {commit.repo} - {commit.sha}")
                 # lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
