@@ -63,7 +63,7 @@ def cmd_search(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm(include_diffs=False)
+            profile_summary = builder.summarize_for_llm()
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
@@ -72,7 +72,7 @@ def cmd_search(args):
 
         # Fetch articles from RSS feeds
         print(
-            f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds..."
+            f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds..."
         )
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
@@ -164,7 +164,7 @@ def cmd_digest(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm(include_diffs=False)
+            profile_summary = builder.summarize_for_llm()
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
@@ -173,7 +173,7 @@ def cmd_digest(args):
 
         # Fetch articles from RSS feeds
         print(
-            f"Fetching articles from {len(config.DEFAULT_FEEDS) + len(config.CUSTOM_FEEDS)} feeds..."
+            f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds..."
         )
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
@@ -184,17 +184,22 @@ def cmd_digest(args):
             print("No articles found in feeds.")
             return
 
-        # Deduplicate: remove articles that were in the previous digest
+        # Deduplicate: remove articles that were in recent digests
         if config.DIGEST_ISSUE_REPO:
             with GitHubProfiler() as profiler:
-                latest_issue = profiler.get_latest_issue(config.DIGEST_ISSUE_REPO)
-                if latest_issue and latest_issue.body:
-                    previous_urls = extract_urls_from_text(latest_issue.body)
+                recent_issues = profiler.get_latest_issues(
+                    config.DIGEST_ISSUE_REPO, limit=config.DIGEST_LOOKBACK
+                )
+                if recent_issues:
+                    previous_urls: set[str] = set()
+                    for issue in recent_issues:
+                        if issue.body:
+                            previous_urls |= extract_urls_from_text(issue.body)
                     original_count = len(articles)
                     articles = [a for a in articles if a.url not in previous_urls]
                     deduped = original_count - len(articles)
                     if deduped > 0:
-                        print(f"Filtered {deduped} articles from previous digest")
+                        print(f"Filtered {deduped} articles from last {len(recent_issues)} digests")
                         print()
 
         # Score articles for relevance

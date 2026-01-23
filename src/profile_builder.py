@@ -279,10 +279,10 @@ class ProfileBuilder:
 
         # Recent commits
         if profile.recent_commits:
-            lines.append("## Recent Commits")
+            lines.append("## Recent Additions with Repositories")
             for commit in profile.recent_commits:
                 lines.append(f"### {commit.repo} - {commit.sha}")
-                lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
+                # lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
                 lines.append(f"Message: {commit.message}")
                 # lines.append(f"Changes: +{commit.additions}/-{commit.deletions}")
 

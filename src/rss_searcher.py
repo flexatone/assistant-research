@@ -46,7 +46,7 @@ class RSSSearcher:
         Args:
             feeds: List of (name, url) tuples. Defaults to config feeds.
         """
-        self.feeds = feeds or (config.DEFAULT_FEEDS + config.CUSTOM_FEEDS)
+        self.feeds = feeds or config.DEFAULT_FEEDS
 
     def _parse_datetime(self, entry) -> Optional[datetime]:
         """Parse the published date from a feed entry."""

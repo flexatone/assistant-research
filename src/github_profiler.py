@@ -417,15 +417,16 @@ class GitHubProfiler:
 
         return issues[:limit]
 
-    def get_latest_issue(self, repo: str) -> Optional[Issue]:
+    def get_latest_issues(self, repo: str, limit: int = 1) -> list[Issue]:
         """
-        Fetch the most recent issue from a repository.
+        Fetch the most recent issues from a repository.
 
         Args:
             repo: Repository full name (e.g., "owner/repo").
+            limit: Maximum number of issues to fetch.
 
         Returns:
-            The most recent Issue, or None if no issues exist.
+            List of Issue objects, newest first.
         """
         try:
             data = self._get(
@@ -434,26 +435,30 @@ class GitHubProfiler:
                     "state": "all",
                     "sort": "created",
                     "direction": "desc",
-                    "per_page": 1,
+                    "per_page": limit,
                 },
             )
 
             if not data:
-                return None
+                return []
 
-            issue_data = data[0]
-            return Issue(
-                number=issue_data["number"],
-                repo=repo,
-                title=issue_data["title"],
-                body=issue_data.get("body"),
-                state=issue_data["state"],
-                author=issue_data["user"]["login"],
-                created_at=self._parse_datetime(issue_data["created_at"]),
-                labels=[label["name"] for label in issue_data.get("labels", [])],
-            )
+            issues = []
+            for issue_data in data:
+                issues.append(
+                    Issue(
+                        number=issue_data["number"],
+                        repo=repo,
+                        title=issue_data["title"],
+                        body=issue_data.get("body"),
+                        state=issue_data["state"],
+                        author=issue_data["user"]["login"],
+                        created_at=self._parse_datetime(issue_data["created_at"]),
+                        labels=[label["name"] for label in issue_data.get("labels", [])],
+                    )
+                )
+            return issues
         except httpx.HTTPStatusError:
-            return None
+            return []
 
     def create_issue(self, repo: str, title: str, body: str) -> str:
         """

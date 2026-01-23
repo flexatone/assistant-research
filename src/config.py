@@ -60,9 +60,6 @@ DEFAULT_FEEDS = [
     ("HackerNoon", "https://hackernoon.com/feed"),
 ]
 
-# User-added custom feeds (name, url) tuples
-CUSTOM_FEEDS: list[tuple[str, str]] = []
-
 # Maximum articles to fetch per feed
 MAX_ARTICLES_PER_FEED = 20
 
@@ -95,3 +92,6 @@ DIGEST_TOP_PICKS = 10
 # Repository to post digest issues to (owner/repo format)
 # If None, --post-issue will fail
 DIGEST_ISSUE_REPO: str | None = "flexatone/assistant-research"
+
+# Number of past digest issues to check for deduplication
+DIGEST_LOOKBACK = 3
