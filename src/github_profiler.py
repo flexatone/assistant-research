@@ -68,17 +68,11 @@ class GitHubProfiler:
 
     BASE_URL = "https://api.github.com"
 
-    def __init__(self, token: Optional[str] = None):
-        self.token = token or config.GITHUB_TOKEN
-        if not self.token:
-            raise ValueError(
-                "GitHub token is required. Set GITHUB_TOKEN environment variable."
-            )
-
+    def __init__(self, token: str):
         self.client = httpx.Client(
             base_url=self.BASE_URL,
             headers={
-                "Authorization": f"Bearer {self.token}",
+                "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28",
             },
@@ -162,9 +156,9 @@ class GitHubProfiler:
     def get_recent_commits(
         self,
         repo: str,
-        days: Optional[int] = None,
-        include_diffs: Optional[bool] = None,
-        limit: Optional[int] = None,
+        days: int,
+        include_diffs: bool,
+        limit: int,
     ) -> list[Commit]:
         """
         Fetch recent commits from a repository.
@@ -178,12 +172,6 @@ class GitHubProfiler:
         Returns:
             List of Commit objects.
         """
-        days = days or config.PROFILE_DAYS
-        include_diffs = (
-            include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
-        )
-        limit = limit or config.MAX_COMMITS_PER_REPO
-
         since = datetime.now(timezone.utc) - timedelta(days=days)
         username = self.get_authenticated_user()
 

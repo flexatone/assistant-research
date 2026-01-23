@@ -110,7 +110,11 @@ class ProfileBuilder:
             # Submit all tasks
             commit_futures = {
                 executor.submit(
-                    self.profiler.get_recent_commits, repo.full_name
+                    self.profiler.get_recent_commits,
+                    repo=repo.full_name,
+                    days=config.PROFILE_DAYS,
+                    include_diffs=config.INCLUDE_DIFFS,
+                    limit=config.MAX_COMMITS_PER_REPO,
                 ): repo.full_name
                 for repo in active_repos
             }
