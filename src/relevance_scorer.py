@@ -1,6 +1,7 @@
 "LLM-based relevance scoring for articles."
 
 import json
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Optional
@@ -140,11 +141,14 @@ Only output the JSON array, no other text."""
             articles[i : i + batch_size] for i in range(0, len(articles), batch_size)
         ]
 
-        with ThreadPoolExecutor(max_workers=min(len(batches), 5)) as executor:
-            futures = [
-                executor.submit(self.score_batch, profile_summary, batch)
-                for batch in batches
-            ]
+        # NOTE: more than 1 worker consistently raised anthropic.RateLimitError with current settings;
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            futures = []
+            for batch in batches:
+                futures.append(
+                    executor.submit(self.score_batch, profile_summary, batch)
+                )
+
             for future in as_completed(futures):
                 all_scored.extend(future.result())
 

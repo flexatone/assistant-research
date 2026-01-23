@@ -74,7 +74,7 @@ RELEVANCE_THRESHOLD = 0.6
 SCORING_MODEL = "claude-sonnet-4-20250514"
 
 # Maximum articles to score in a single batch
-SCORING_BATCH_SIZE = 10
+SCORING_BATCH_SIZE = 20
 
 # =============================================================================
 # Digest Generation Settings

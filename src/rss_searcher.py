@@ -176,7 +176,7 @@ class RSSSearcher:
         Fetch articles from all configured feeds concurrently.
 
         Args:
-            limit_per_feed: Maximum articles per feed. Defaults to config.MAX_ARTICLES_PER_FEED.
+            limit_per_feed: Maximum articles per feed.
 
         Returns:
             List of all Article objects, sorted by publish date (newest first).
