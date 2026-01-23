@@ -157,7 +157,7 @@ class ProfileBuilder:
                 number=pr.number,
                 repo=pr.repo,
                 title=pr.title,
-                body=pr.body[:500] if pr.body else None,  # Truncate long bodies
+                body=pr.body if pr.body else None,  # Truncate long bodies
                 state=pr.state,
                 created_at=pr.created_at,
             )
@@ -169,7 +169,7 @@ class ProfileBuilder:
                 number=issue.number,
                 repo=issue.repo,
                 title=issue.title,
-                body=issue.body[:500] if issue.body else None,
+                body=issue.body if issue.body else None,
                 state=issue.state,
                 labels=issue.labels,
                 created_at=issue.created_at,
@@ -251,25 +251,6 @@ class ProfileBuilder:
                     lines.append(f"  Topics: {', '.join(repo.topics)}")
             lines.append("")
 
-        # Recent commits
-        if profile.recent_commits:
-            lines.append("## Recent Commits")
-            for commit in profile.recent_commits[:30]:  # Limit for LLM context
-                lines.append(f"### {commit.repo} - {commit.sha}")
-                lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
-                lines.append(f"Message: {commit.message}")
-                lines.append(f"Changes: +{commit.additions}/-{commit.deletions}")
-
-                if include_diffs and commit.diff:
-                    lines.append("```diff")
-                    # Truncate very long diffs
-                    diff = commit.diff
-                    if len(diff) > 2000:
-                        diff = diff[:2000] + "\n... (truncated)"
-                    lines.append(diff)
-                    lines.append("```")
-                lines.append("")
-
         # Pull requests
         if profile.recent_prs:
             lines.append("## Recent Pull Requests")
@@ -294,6 +275,25 @@ class ProfileBuilder:
                 )
                 if issue.body:
                     lines.append(f"Description: {issue.body}")
+                lines.append("")
+
+        # Recent commits
+        if profile.recent_commits:
+            lines.append("## Recent Commits")
+            for commit in profile.recent_commits:
+                lines.append(f"### {commit.repo} - {commit.sha}")
+                lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
+                lines.append(f"Message: {commit.message}")
+                # lines.append(f"Changes: +{commit.additions}/-{commit.deletions}")
+
+                if include_diffs and commit.diff:
+                    lines.append("```")
+                    for entry in (e.strip() for e in commit.diff.split('\n')):
+                        # only take newly added lines
+                        if entry.startswith('+'):
+                            lines.append(entry[1:])
+
+                    lines.append("```")
                 lines.append("")
 
         return "\n".join(lines)

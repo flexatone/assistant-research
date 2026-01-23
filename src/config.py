@@ -26,7 +26,7 @@ INCLUDE_DIFFS = True
 MAX_REPOS = 40
 
 # Maximum commits to fetch per repository
-MAX_COMMITS_PER_REPO = 50
+MAX_COMMITS_PER_REPO = 10
 
 # Maximum PRs to fetch
 MAX_PRS = 50
