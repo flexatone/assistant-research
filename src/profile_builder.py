@@ -288,9 +288,9 @@ class ProfileBuilder:
 
                 if include_diffs and commit.diff:
                     lines.append("```")
-                    for entry in (e.strip() for e in commit.diff.split('\n')):
+                    for entry in (e.strip() for e in commit.diff.split("\n")):
                         # only take newly added lines
-                        if entry.startswith('+'):
+                        if entry.startswith("+"):
                             lines.append(entry[1:])
 
                     lines.append("```")

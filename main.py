@@ -71,9 +71,7 @@ def cmd_search(args):
         print()
 
         # Fetch articles from RSS feeds
-        print(
-            f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds..."
-        )
+        print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
@@ -172,9 +170,7 @@ def cmd_digest(args):
         print()
 
         # Fetch articles from RSS feeds
-        print(
-            f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds..."
-        )
+        print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
         searcher = RSSSearcher()
         articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
@@ -199,7 +195,9 @@ def cmd_digest(args):
                     articles = [a for a in articles if a.url not in previous_urls]
                     deduped = original_count - len(articles)
                     if deduped > 0:
-                        print(f"Filtered {deduped} articles from last {len(recent_issues)} digests")
+                        print(
+                            f"Filtered {deduped} articles from last {len(recent_issues)} digests"
+                        )
                         print()
 
         # Score articles for relevance

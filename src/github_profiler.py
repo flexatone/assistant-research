@@ -453,7 +453,9 @@ class GitHubProfiler:
                         state=issue_data["state"],
                         author=issue_data["user"]["login"],
                         created_at=self._parse_datetime(issue_data["created_at"]),
-                        labels=[label["name"] for label in issue_data.get("labels", [])],
+                        labels=[
+                            label["name"] for label in issue_data.get("labels", [])
+                        ],
                     )
                 )
             return issues
