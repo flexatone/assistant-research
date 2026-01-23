@@ -83,8 +83,6 @@ class ProfileBuilder:
         """
         Build an activity profile from GitHub data.
 
-        Uses config.PROFILE_DAYS and config.INCLUDE_DIFFS for settings.
-
         Returns:
             ActivityProfile with aggregated data.
         """

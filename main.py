@@ -72,8 +72,8 @@ def cmd_search(args):
 
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
-        searcher = RSSSearcher()
-        articles = searcher.fetch_all_feeds()
+        searcher = RSSSearcher(config.DEFAULT_FEEDS)
+        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
         print(f"Found {len(articles)} articles")
         print()
 
@@ -133,10 +133,10 @@ def cmd_search(args):
 
 def cmd_test_feeds(_args):
     """Test all configured RSS feeds and report which are parsable."""
-    searcher = RSSSearcher()
+    searcher = RSSSearcher(config.DEFAULT_FEEDS)
     print(f"Testing {len(searcher.feeds)} feeds...\n")
 
-    results = searcher.fetch_all_feeds_with_results()
+    results = searcher.fetch_all_feeds_with_results(config.MAX_ARTICLES_PER_FEED)
 
     # Print results
     max_name_len = max(len(r.name) for r in results)
@@ -171,8 +171,8 @@ def cmd_digest(args):
 
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
-        searcher = RSSSearcher()
-        articles = searcher.fetch_all_feeds()
+        searcher = RSSSearcher(config.DEFAULT_FEEDS)
+        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
         print(f"Found {len(articles)} articles")
         print()
 

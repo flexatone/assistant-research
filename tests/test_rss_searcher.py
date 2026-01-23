@@ -53,7 +53,7 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed")
+        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
 
         assert len(articles) == 2
         assert articles[0].title == "Article 1"
@@ -66,7 +66,7 @@ class TestFetchFeed:
         mock_parse.return_value = make_feed([])
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Empty Feed", "https://test.com/feed")
+        articles = searcher.fetch_feed("Empty Feed", "https://test.com/feed", limit=20)
 
         assert len(articles) == 0
 
@@ -89,7 +89,7 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed")
+        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
 
         assert len(articles) == 1
 
@@ -99,7 +99,7 @@ class TestFetchFeed:
         mock_parse.return_value = make_feed([], bozo=True)
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed")
+        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
 
         assert len(articles) == 0
 
@@ -118,7 +118,7 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed")
+        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
 
         assert len(articles) == 1
         assert articles[0].title == "Has Link"
@@ -145,7 +145,7 @@ class TestFetchAllFeeds:
                 ("Feed B", "https://b.com/feed"),
             ]
         )
-        articles = searcher.fetch_all_feeds()
+        articles = searcher.fetch_all_feeds(limit_per_feed=20)
 
         assert len(articles) == 2
         assert mock_parse.call_count == 2
@@ -178,7 +178,7 @@ class TestFetchAllFeeds:
                 ("Feed B", "https://b.com/feed"),
             ]
         )
-        articles = searcher.fetch_all_feeds()
+        articles = searcher.fetch_all_feeds(limit_per_feed=20)
 
         assert articles[0].title == "New"
         assert articles[1].title == "Old"
@@ -200,7 +200,7 @@ class TestFetchAllFeedsWithResults:
                 ("Feed A", "https://a.com/feed"),
             ]
         )
-        results = searcher.fetch_all_feeds_with_results()
+        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
 
         assert len(results) == 1
         assert isinstance(results[0], FeedResult)
@@ -213,7 +213,7 @@ class TestFetchAllFeedsWithResults:
         mock_parse.return_value = make_feed([])
 
         searcher = RSSSearcher(feeds=[("Empty", "https://empty.com/feed")])
-        results = searcher.fetch_all_feeds_with_results()
+        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
 
         assert results[0].ok is False
         assert results[0].error == "No articles returned"
@@ -226,7 +226,7 @@ class TestFetchAllFeedsWithResults:
         with patch.object(
             searcher, "fetch_feed", side_effect=Exception("Network error")
         ):
-            results = searcher.fetch_all_feeds_with_results()
+            results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
 
         assert results[0].ok is False
         assert "Network error" in results[0].error
@@ -242,6 +242,6 @@ class TestFetchAllFeedsWithResults:
                 ("Feed B", "https://b.com/feed"),
             ]
         )
-        results = searcher.fetch_all_feeds_with_results()
+        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
 
         assert [r.name for r in results] == ["Feed C", "Feed A", "Feed B"]
