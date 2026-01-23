@@ -31,7 +31,7 @@ def cmd_profile(args):
     print()
 
     try:
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
 
@@ -60,7 +60,7 @@ def cmd_search(args):
 
     try:
         # Build the profile first
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
             profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
@@ -159,7 +159,7 @@ def cmd_digest(args):
 
     try:
         # Build the profile first
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
             profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
@@ -182,7 +182,7 @@ def cmd_digest(args):
 
         # Deduplicate: remove articles that were in recent digests
         if config.DIGEST_ISSUE_REPO:
-            with GitHubProfiler() as profiler:
+            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
                 recent_issues = profiler.get_latest_issues(
                     config.DIGEST_ISSUE_REPO, limit=config.DIGEST_LOOKBACK
                 )
@@ -228,7 +228,7 @@ def cmd_digest(args):
             print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
             pacific = ZoneInfo("America/Los_Angeles")
             title = datetime.now(pacific).strftime("Digest: %Y-%m-%d %H:%M")
-            with GitHubProfiler() as profiler:
+            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
                 issue_url = profiler.create_issue(
                     config.DIGEST_ISSUE_REPO, title, digest
                 )

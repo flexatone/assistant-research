@@ -13,6 +13,6 @@ class AnthropicClientBase:
         Initialize the Anthropic client.
 
         Args:
-            api_key: Anthropic API key. Defaults to config.ANTHROPIC_API_KEY.
+            api_key: Anthropic API key.
         """
         self.client = anthropic.Anthropic(api_key=api_key)
