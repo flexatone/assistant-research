@@ -208,7 +208,7 @@ class TestGetRecentPRs:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            prs = profiler.get_recent_prs()
+            prs = profiler.get_recent_prs(days=30, limit=50)
 
         assert len(prs) == 1
         assert prs[0].number == 42
@@ -249,7 +249,7 @@ class TestGetRecentIssues:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            issues = profiler.get_recent_issues()
+            issues = profiler.get_recent_issues(days=30, limit=50)
 
         assert len(issues) == 1
         assert issues[0].number == 99
@@ -277,5 +277,3 @@ class TestCreateIssue:
         assert call_args[0][0] == "/repos/user/repo/issues"
         assert call_args[1]["json"]["title"] == "Test Issue"
         assert call_args[1]["json"]["body"] == "Issue body"
-
-

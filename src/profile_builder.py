@@ -88,14 +88,13 @@ class ProfileBuilder:
         Returns:
             ActivityProfile with aggregated data.
         """
-        days = config.PROFILE_DAYS
         now = datetime.now(timezone.utc)
-        since = now - timedelta(days=days)
+        since = now - timedelta(days=config.PROFILE_DAYS)
 
         username = self.profiler.get_authenticated_user()
 
         # Fetch repos first to know where to look for commits
-        repos = self.profiler.get_user_repos()
+        repos = self.profiler.get_user_repos(config.MAX_REPOS)
 
         # Filter to repos with recent activity
         active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
@@ -118,8 +117,16 @@ class ProfileBuilder:
                 ): repo.full_name
                 for repo in active_repos
             }
-            prs_future = executor.submit(self.profiler.get_recent_prs)
-            issues_future = executor.submit(self.profiler.get_recent_issues)
+            prs_future = executor.submit(
+                self.profiler.get_recent_prs,
+                days=config.PROFILE_DAYS,
+                limit=config.MAX_PRS,
+            )
+            issues_future = executor.submit(
+                self.profiler.get_recent_issues,
+                days=config.PROFILE_DAYS,
+                limit=config.MAX_ISSUES,
+            )
 
             # Collect commit results
             for future in as_completed(commit_futures):
