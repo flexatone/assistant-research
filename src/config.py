@@ -42,7 +42,7 @@ MAX_DIFF_PATCH_SIZE = 2000
 MAX_DIFF_TOTAL_SIZE = 10000
 
 # =============================================================================
-# RSS Feed Settings
+# Profile Sources
 # =============================================================================
 
 # Default RSS feeds to search
@@ -54,14 +54,23 @@ DEFAULT_FEEDS = [
     ("Krebs on Security", "https://krebsonsecurity.com/feed"),
     ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
     ("Real Python", "https://realpython.com/atom.xml"),
-    ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
     ("MIT Research News", "https://news.mit.edu/rss/research"),
     ("LWN.net", "https://lwn.net/headlines/rss"),
     ("HackerNoon", "https://hackernoon.com/feed"),
 ]
 
+# ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
+
+
 # Maximum articles to fetch per feed
 MAX_ARTICLES_PER_FEED = 20
+
+PROFILE_CONTEXT = [
+    ("Articles Published", "https://www.flexatone.net/api/articles", 20),
+    ("Code & Systems", "https://www.flexatone.net/api/code", 20),
+    ("Talks & Presentations", "https://www.flexatone.net/api/talks", 20),
+]
+
 
 # =============================================================================
 # Relevance Scoring Settings

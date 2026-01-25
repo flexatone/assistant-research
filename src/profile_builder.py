@@ -1,9 +1,12 @@
 """Aggregates GitHub data into a structured activity profile."""
 
+import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+
+import httpx
 
 from .github_profiler import GitHubProfiler, Commit, PullRequest, Issue, Repo
 from . import config
@@ -59,6 +62,14 @@ class RepoSummary:
 
 
 @dataclass(frozen=True)
+class ContextSection:
+    """A section of additional profile context from an external URL."""
+
+    title: str
+    entries: list[dict]  # Raw JSON objects from the API
+
+
+@dataclass(frozen=True)
 class ActivityProfile:
     """Aggregated activity profile from GitHub."""
 
@@ -70,6 +81,7 @@ class ActivityProfile:
     recent_prs: list[PRSummary] = field(default_factory=list)
     recent_issues: list[IssueSummary] = field(default_factory=list)
     active_repos: list[RepoSummary] = field(default_factory=list)
+    context_sections: list[ContextSection] = field(default_factory=list)
 
 
 class ProfileBuilder:
@@ -78,6 +90,19 @@ class ProfileBuilder:
     def __init__(self, profiler: GitHubProfiler):
         self.profiler = profiler
         self._profile: ActivityProfile | None = None
+
+    @staticmethod
+    def _fetch_context(title: str, url: str, limit: int) -> ContextSection:
+        """Fetch a context section from a URL returning JSON array."""
+        try:
+            response = httpx.get(url, timeout=30.0)
+            response.raise_for_status()
+            data = response.json()
+            if isinstance(data, list):
+                return ContextSection(title=title, entries=data[:limit])
+            return ContextSection(title=title, entries=[])
+        except Exception:
+            return ContextSection(title=title, entries=[])
 
     def build_profile(self) -> ActivityProfile:
         """
@@ -100,13 +125,19 @@ class ProfileBuilder:
         # Filter to repos with recent activity
         active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
 
-        # Fetch commits, PRs, and issues concurrently
+        # Fetch commits, PRs, issues, and context concurrently
         all_commits: list[Commit] = []
         repo_commit_counts: dict[str, int] = {}
         prs: list[PullRequest] = []
         issues: list[Issue] = []
+        context_sections: list[ContextSection] = []
 
-        with ThreadPoolExecutor(max_workers=len(active_repos) + 2) as executor:
+        context_configs = (
+            config.PROFILE_CONTEXT if hasattr(config, "PROFILE_CONTEXT") else []
+        )
+        max_workers = len(active_repos) + 2 + len(context_configs)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             commit_futures = {
                 executor.submit(
@@ -116,6 +147,12 @@ class ProfileBuilder:
             }
             prs_future = executor.submit(self.profiler.get_recent_prs)
             issues_future = executor.submit(self.profiler.get_recent_issues)
+
+            # Submit context fetches
+            context_futures = [
+                executor.submit(self._fetch_context, title, url, limit)
+                for title, url, limit in context_configs
+            ]
 
             # Collect commit results
             for future in as_completed(commit_futures):
@@ -127,6 +164,9 @@ class ProfileBuilder:
             # Collect PRs and issues
             prs = prs_future.result()
             issues = issues_future.result()
+
+            # Collect context sections (maintain order)
+            context_sections = [f.result() for f in context_futures]
 
         # Aggregate languages (count repos per language)
         language_counts = Counter(r.language for r in active_repos if r.language)
@@ -198,29 +238,32 @@ class ProfileBuilder:
             recent_prs=pr_summaries,
             recent_issues=issue_summaries,
             active_repos=repo_summaries,
+            context_sections=context_sections,
         )
 
         return self._profile
 
     def summarize_for_llm(self, include_diffs: bool) -> str:
-        """
-        Format the profile as a text summary suitable for an LLM.
-
-        Args:
-            include_diffs: Whether to include code diffs.
-
-        Returns:
-            Formatted string summary of the activity profile.
-        """
         if self._profile is None:
             self.build_profile()
 
         profile = self._profile
-        lines = [
-            f"# GitHub Activity Profile for {profile.username}",
-            f"Period: {profile.time_range[0].strftime('%Y-%m-%d')} to {profile.time_range[1].strftime('%Y-%m-%d')}",
-            "",
-        ]
+        lines = []
+        lines.append(f"# Historical Activities")
+
+        # Context sections from external URLs
+        for section in profile.context_sections:
+            if section.entries:
+                lines.append(f"## {section.title}")
+                for entry in section.entries:
+                    # Format each entry as JSON for flexibility
+                    lines.append(f"- {json.dumps(entry)}")
+                lines.append("")
+
+        lines.append(f"# Recent Activity In GitHub")
+        lines.append(
+            f"Period: {profile.time_range[0].strftime('%Y-%m-%d')} to {profile.time_range[1].strftime('%Y-%m-%d')}"
+        )
 
         # Languages
         if profile.languages:
