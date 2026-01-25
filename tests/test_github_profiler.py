@@ -128,7 +128,9 @@ class TestGetRecentCommits:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            commits = profiler.get_recent_commits("user/repo", include_diffs=True)
+            commits = profiler.get_recent_commits(
+                "user/repo", days=30, include_diffs=True, limit=50
+            )
 
         assert len(commits) == 1
         assert commits[0].sha == "abc123"
@@ -165,7 +167,9 @@ class TestGetRecentCommits:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            commits = profiler.get_recent_commits("user/repo", include_diffs=False)
+            commits = profiler.get_recent_commits(
+                "user/repo", days=30, include_diffs=False, limit=50
+            )
 
         assert len(commits) == 1
         assert commits[0].diff is None
@@ -204,7 +208,7 @@ class TestGetRecentPRs:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            prs = profiler.get_recent_prs()
+            prs = profiler.get_recent_prs(days=30, limit=50)
 
         assert len(prs) == 1
         assert prs[0].number == 42
@@ -245,7 +249,7 @@ class TestGetRecentIssues:
         mock_client.get.side_effect = get_side_effect
 
         with GitHubProfiler(token="fake-token") as profiler:
-            issues = profiler.get_recent_issues()
+            issues = profiler.get_recent_issues(days=30, limit=50)
 
         assert len(issues) == 1
         assert issues[0].number == 99
@@ -273,16 +277,3 @@ class TestCreateIssue:
         assert call_args[0][0] == "/repos/user/repo/issues"
         assert call_args[1]["json"]["title"] == "Test Issue"
         assert call_args[1]["json"]["body"] == "Issue body"
-
-
-class TestTokenRequired:
-    """Tests for token validation."""
-
-    def test_raises_without_token(self):
-        with patch.dict("os.environ", {}, clear=True):
-            with patch("src.github_profiler.config.GITHUB_TOKEN", None):
-                try:
-                    GitHubProfiler(token=None)
-                    assert False, "Should have raised ValueError"
-                except ValueError as e:
-                    assert "token is required" in str(e).lower()

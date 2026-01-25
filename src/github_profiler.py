@@ -68,17 +68,11 @@ class GitHubProfiler:
 
     BASE_URL = "https://api.github.com"
 
-    def __init__(self, token: Optional[str] = None):
-        self.token = token or config.GITHUB_TOKEN
-        if not self.token:
-            raise ValueError(
-                "GitHub token is required. Set GITHUB_TOKEN environment variable."
-            )
-
+    def __init__(self, token: str):
         self.client = httpx.Client(
             base_url=self.BASE_URL,
             headers={
-                "Authorization": f"Bearer {self.token}",
+                "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": "2022-11-28",
             },
@@ -111,18 +105,16 @@ class GitHubProfiler:
         data = self._get("/user")
         return data["login"]
 
-    def get_user_repos(self, limit: Optional[int] = None) -> list[Repo]:
+    def get_user_repos(self, limit: int) -> list[Repo]:
         """
         Fetch repositories the user has contributed to recently.
 
         Args:
-            limit: Maximum number of repos to return. Defaults to config.MAX_REPOS.
+            limit: Maximum number of repos to return.
 
         Returns:
             List of Repo objects sorted by most recently pushed.
         """
-        limit = limit or config.MAX_REPOS
-
         repos = []
         page = 1
         per_page = min(limit, 100)
@@ -162,28 +154,22 @@ class GitHubProfiler:
     def get_recent_commits(
         self,
         repo: str,
-        days: Optional[int] = None,
-        include_diffs: Optional[bool] = None,
-        limit: Optional[int] = None,
+        days: int,
+        include_diffs: bool,
+        limit: int,
     ) -> list[Commit]:
         """
         Fetch recent commits from a repository.
 
         Args:
             repo: Repository full name (e.g., "owner/repo").
-            days: Number of days to look back. Defaults to config.PROFILE_DAYS.
-            include_diffs: Whether to fetch full diffs. Defaults to config.INCLUDE_DIFFS.
-            limit: Maximum commits to fetch. Defaults to config.MAX_COMMITS_PER_REPO.
+            days: Number of days to look back.
+            include_diffs: Whether to fetch full diffs.
+            limit: Maximum commits to fetch.
 
         Returns:
             List of Commit objects.
         """
-        days = days or config.PROFILE_DAYS
-        include_diffs = (
-            include_diffs if include_diffs is not None else config.INCLUDE_DIFFS
-        )
-        limit = limit or config.MAX_COMMITS_PER_REPO
-
         since = datetime.now(timezone.utc) - timedelta(days=days)
         username = self.get_authenticated_user()
 
@@ -278,21 +264,20 @@ class GitHubProfiler:
         return commits[:limit]
 
     def get_recent_prs(
-        self, days: Optional[int] = None, limit: Optional[int] = None
+        self,
+        days: int,
+        limit: int,
     ) -> list[PullRequest]:
         """
         Fetch recent pull requests authored by the user.
 
         Args:
-            days: Number of days to look back. Defaults to config.PROFILE_DAYS.
-            limit: Maximum PRs to fetch. Defaults to config.MAX_PRS.
+            days: Number of days to look back.
+            limit: Maximum PRs to fetch.
 
         Returns:
             List of PullRequest objects.
         """
-        days = days or config.PROFILE_DAYS
-        limit = limit or config.MAX_PRS
-
         since = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Search for PRs authored by the user
@@ -346,21 +331,20 @@ class GitHubProfiler:
         return prs[:limit]
 
     def get_recent_issues(
-        self, days: Optional[int] = None, limit: Optional[int] = None
+        self,
+        days: int,
+        limit: int,
     ) -> list[Issue]:
         """
         Fetch recent issues created by the user.
 
         Args:
-            days: Number of days to look back. Defaults to config.PROFILE_DAYS.
-            limit: Maximum issues to fetch. Defaults to config.MAX_ISSUES.
+            days: Number of days to look back.
+            limit: Maximum issues to fetch.
 
         Returns:
             List of Issue objects.
         """
-        days = days or config.PROFILE_DAYS
-        limit = limit or config.MAX_ISSUES
-
         since = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Search for issues (not PRs) created by the user

@@ -39,14 +39,14 @@ class Article:
 class RSSSearcher:
     """Fetches and parses RSS feeds."""
 
-    def __init__(self, feeds: Optional[list[tuple[str, str]]] = None):
+    def __init__(self, feeds: list[tuple[str, str]]):
         """
         Initialize the RSS searcher.
 
         Args:
-            feeds: List of (name, url) tuples. Defaults to config feeds.
+            feeds: List of (name, url) tuples.
         """
-        self.feeds = feeds or config.DEFAULT_FEEDS
+        self.feeds = feeds
 
     def _parse_datetime(self, entry) -> Optional[datetime]:
         """Parse the published date from a feed entry."""
@@ -71,7 +71,10 @@ class RSSSearcher:
         return None
 
     def fetch_feed(
-        self, name: str, url: str, limit: Optional[int] = None
+        self,
+        name: str,
+        url: str,
+        limit: int,
     ) -> list[Article]:
         """
         Fetch and parse a single RSS feed.
@@ -84,8 +87,6 @@ class RSSSearcher:
         Returns:
             List of Article objects.
         """
-        limit = limit or config.MAX_ARTICLES_PER_FEED
-
         try:
             feed = feedparser.parse(url)
         except Exception:
@@ -119,28 +120,31 @@ class RSSSearcher:
         return articles
 
     def _fetch_feed_safe(
-        self, name: str, url: str, limit: Optional[int] = None
+        self,
+        name: str,
+        url: str,
+        limit: int,
     ) -> FeedResult:
         """Fetch a feed and return a FeedResult (never raises)."""
         try:
             articles = self.fetch_feed(name, url, limit)
             if articles:
                 return FeedResult(name=name, url=url, articles=articles)
-            else:
-                return FeedResult(
-                    name=name, url=url, articles=[], error="No articles returned"
-                )
+            return FeedResult(
+                name=name, url=url, articles=[], error="No articles returned"
+            )
         except Exception as e:
             return FeedResult(name=name, url=url, articles=[], error=str(e))
 
     def fetch_all_feeds_with_results(
-        self, limit_per_feed: Optional[int] = None
+        self,
+        limit_per_feed: int,
     ) -> list[FeedResult]:
         """
         Fetch all feeds concurrently and return results for each.
 
         Args:
-            limit_per_feed: Maximum articles per feed. Defaults to config.MAX_ARTICLES_PER_FEED.
+            limit_per_feed: Maximum articles per feed.
 
         Returns:
             List of FeedResult objects in original feed order.
@@ -149,7 +153,12 @@ class RSSSearcher:
 
         with ThreadPoolExecutor(max_workers=len(self.feeds)) as executor:
             futures = {
-                executor.submit(self._fetch_feed_safe, name, url, limit_per_feed): name
+                executor.submit(
+                    self._fetch_feed_safe,
+                    name,
+                    url,
+                    limit_per_feed,
+                ): name
                 for name, url in self.feeds
             }
             for future in as_completed(futures):
@@ -159,12 +168,15 @@ class RSSSearcher:
         # Return in original feed order
         return [results[name] for name, _ in self.feeds]
 
-    def fetch_all_feeds(self, limit_per_feed: Optional[int] = None) -> list[Article]:
+    def fetch_all_feeds(
+        self,
+        limit_per_feed: int,
+    ) -> list[Article]:
         """
         Fetch articles from all configured feeds concurrently.
 
         Args:
-            limit_per_feed: Maximum articles per feed. Defaults to config.MAX_ARTICLES_PER_FEED.
+            limit_per_feed: Maximum articles per feed.
 
         Returns:
             List of all Article objects, sorted by publish date (newest first).

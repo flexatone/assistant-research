@@ -108,19 +108,16 @@ class ProfileBuilder:
         """
         Build an activity profile from GitHub data.
 
-        Uses config.PROFILE_DAYS and config.INCLUDE_DIFFS for settings.
-
         Returns:
             ActivityProfile with aggregated data.
         """
-        days = config.PROFILE_DAYS
         now = datetime.now(timezone.utc)
-        since = now - timedelta(days=days)
+        since = now - timedelta(days=config.PROFILE_DAYS)
 
         username = self.profiler.get_authenticated_user()
 
         # Fetch repos first to know where to look for commits
-        repos = self.profiler.get_user_repos()
+        repos = self.profiler.get_user_repos(config.MAX_REPOS)
 
         # Filter to repos with recent activity
         active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
@@ -141,12 +138,24 @@ class ProfileBuilder:
             # Submit all tasks
             commit_futures = {
                 executor.submit(
-                    self.profiler.get_recent_commits, repo.full_name
+                    self.profiler.get_recent_commits,
+                    repo=repo.full_name,
+                    days=config.PROFILE_DAYS,
+                    include_diffs=config.INCLUDE_DIFFS,
+                    limit=config.MAX_COMMITS_PER_REPO,
                 ): repo.full_name
                 for repo in active_repos
             }
-            prs_future = executor.submit(self.profiler.get_recent_prs)
-            issues_future = executor.submit(self.profiler.get_recent_issues)
+            prs_future = executor.submit(
+                self.profiler.get_recent_prs,
+                days=config.PROFILE_DAYS,
+                limit=config.MAX_PRS,
+            )
+            issues_future = executor.submit(
+                self.profiler.get_recent_issues,
+                days=config.PROFILE_DAYS,
+                limit=config.MAX_ISSUES,
+            )
 
             # Submit context fetches
             context_futures = [

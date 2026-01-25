@@ -31,7 +31,7 @@ def cmd_profile(args):
     print()
 
     try:
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
 
@@ -60,7 +60,7 @@ def cmd_search(args):
 
     try:
         # Build the profile first
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
             # heading_level=2 since relevance_scorer prompt uses # for section headers
@@ -75,8 +75,8 @@ def cmd_search(args):
 
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
-        searcher = RSSSearcher()
-        articles = searcher.fetch_all_feeds()
+        searcher = RSSSearcher(config.DEFAULT_FEEDS)
+        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
         print(f"Found {len(articles)} articles")
         print()
 
@@ -136,10 +136,10 @@ def cmd_search(args):
 
 def cmd_test_feeds(_args):
     """Test all configured RSS feeds and report which are parsable."""
-    searcher = RSSSearcher()
+    searcher = RSSSearcher(config.DEFAULT_FEEDS)
     print(f"Testing {len(searcher.feeds)} feeds...\n")
 
-    results = searcher.fetch_all_feeds_with_results()
+    results = searcher.fetch_all_feeds_with_results(config.MAX_ARTICLES_PER_FEED)
 
     # Print results
     max_name_len = max(len(r.name) for r in results)
@@ -162,7 +162,7 @@ def cmd_digest(args):
 
     try:
         # Build the profile first
-        with GitHubProfiler() as profiler:
+        with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
             # heading_level=3 since digest_writer prompt uses ## for section headers
@@ -177,8 +177,8 @@ def cmd_digest(args):
 
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
-        searcher = RSSSearcher()
-        articles = searcher.fetch_all_feeds()
+        searcher = RSSSearcher(config.DEFAULT_FEEDS)
+        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
         print(f"Found {len(articles)} articles")
         print()
 
@@ -188,7 +188,7 @@ def cmd_digest(args):
 
         # Deduplicate: remove articles that were in recent digests
         if config.DIGEST_ISSUE_REPO:
-            with GitHubProfiler() as profiler:
+            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
                 recent_issues = profiler.get_latest_issues(
                     config.DIGEST_ISSUE_REPO, limit=config.DIGEST_LOOKBACK
                 )
@@ -234,7 +234,7 @@ def cmd_digest(args):
             print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
             pacific = ZoneInfo("America/Los_Angeles")
             title = datetime.now(pacific).strftime("Digest: %Y-%m-%d %H:%M")
-            with GitHubProfiler() as profiler:
+            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
                 issue_url = profiler.create_issue(
                     config.DIGEST_ISSUE_REPO, title, digest
                 )
