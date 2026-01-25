@@ -76,7 +76,7 @@ def cmd_search(args):
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
         searcher = RSSSearcher(config.DEFAULT_FEEDS)
-        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
+        articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
         print()
 
@@ -139,7 +139,7 @@ def cmd_test_feeds(_args):
     searcher = RSSSearcher(config.DEFAULT_FEEDS)
     print(f"Testing {len(searcher.feeds)} feeds...\n")
 
-    results = searcher.fetch_all_feeds_with_results(config.MAX_ARTICLES_PER_FEED)
+    results = searcher.fetch_all_feeds_with_results()
 
     # Print results
     max_name_len = max(len(r.name) for r in results)
@@ -178,7 +178,7 @@ def cmd_digest(args):
         # Fetch articles from RSS feeds
         print(f"Fetching articles from {len(config.DEFAULT_FEEDS)} feeds...")
         searcher = RSSSearcher(config.DEFAULT_FEEDS)
-        articles = searcher.fetch_all_feeds(config.MAX_ARTICLES_PER_FEED)
+        articles = searcher.fetch_all_feeds()
         print(f"Found {len(articles)} articles")
         print()
 

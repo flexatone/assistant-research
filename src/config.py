@@ -45,25 +45,21 @@ MAX_DIFF_TOTAL_SIZE = 10000
 # Profile Sources
 # =============================================================================
 
-# Default RSS feeds to search
+# Default RSS feeds: (name, url, max_articles)
 DEFAULT_FEEDS = [
-    ("Hacker News", "https://hnrss.org/frontpage"),
-    ("Lobsters", "https://lobste.rs/rss"),
-    ("dev.to", "https://dev.to/feed"),
-    ("Rust Blog", "https://blog.rust-lang.org/feed.xml"),
-    ("Krebs on Security", "https://krebsonsecurity.com/feed"),
-    ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml"),
-    ("Real Python", "https://realpython.com/atom.xml"),
-    ("MIT Research News", "https://news.mit.edu/rss/research"),
-    ("LWN.net", "https://lwn.net/headlines/rss"),
-    ("HackerNoon", "https://hackernoon.com/feed"),
-    ("O'Reilly Radar", "https://www.oreilly.com/radar/feed"),
-    ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
+    ("Hacker News", "https://hnrss.org/frontpage", 20),
+    ("Lobsters", "https://lobste.rs/rss", 20),
+    ("dev.to", "https://dev.to/feed", 20),
+    ("Krebs on Security", "https://krebsonsecurity.com/feed", 20),
+    ("The Hacker News", "https://feeds.feedburner.com/TheHackersNews?format=xml", 20),
+    ("Real Python", "https://realpython.com/atom.xml", 20),
+    ("MIT Research News", "https://news.mit.edu/rss/research", 20),
+    ("LWN.net", "https://lwn.net/headlines/rss", 20),
+    ("HackerNoon", "https://hackernoon.com/feed", 20),
+    ("O'Reilly Radar", "https://www.oreilly.com/radar/feed", 20),
+    ("Rust Blog", "https://blog.rust-lang.org/feed.xml", 4),
+    ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss", 2),
 ]
-
-
-# Maximum articles to fetch per feed
-MAX_ARTICLES_PER_FEED = 20
 
 PROFILE_CONTEXT = [
     ("Articles Published", "https://www.flexatone.net/api/articles", 20),

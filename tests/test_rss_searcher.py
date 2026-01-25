@@ -141,11 +141,11 @@ class TestFetchAllFeeds:
 
         searcher = RSSSearcher(
             feeds=[
-                ("Feed A", "https://a.com/feed"),
-                ("Feed B", "https://b.com/feed"),
+                ("Feed A", "https://a.com/feed", 20),
+                ("Feed B", "https://b.com/feed", 20),
             ]
         )
-        articles = searcher.fetch_all_feeds(limit_per_feed=20)
+        articles = searcher.fetch_all_feeds()
 
         assert len(articles) == 2
         assert mock_parse.call_count == 2
@@ -174,11 +174,11 @@ class TestFetchAllFeeds:
 
         searcher = RSSSearcher(
             feeds=[
-                ("Feed A", "https://a.com/feed"),
-                ("Feed B", "https://b.com/feed"),
+                ("Feed A", "https://a.com/feed", 20),
+                ("Feed B", "https://b.com/feed", 20),
             ]
         )
-        articles = searcher.fetch_all_feeds(limit_per_feed=20)
+        articles = searcher.fetch_all_feeds()
 
         assert articles[0].title == "New"
         assert articles[1].title == "Old"
@@ -197,10 +197,10 @@ class TestFetchAllFeedsWithResults:
 
         searcher = RSSSearcher(
             feeds=[
-                ("Feed A", "https://a.com/feed"),
+                ("Feed A", "https://a.com/feed", 20),
             ]
         )
-        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
+        results = searcher.fetch_all_feeds_with_results()
 
         assert len(results) == 1
         assert isinstance(results[0], FeedResult)
@@ -212,21 +212,21 @@ class TestFetchAllFeedsWithResults:
     def test_handles_empty_feed(self, mock_parse):
         mock_parse.return_value = make_feed([])
 
-        searcher = RSSSearcher(feeds=[("Empty", "https://empty.com/feed")])
-        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
+        searcher = RSSSearcher(feeds=[("Empty", "https://empty.com/feed", 20)])
+        results = searcher.fetch_all_feeds_with_results()
 
         assert results[0].ok is False
         assert results[0].error == "No articles returned"
 
     def test_handles_fetch_feed_exception(self):
         """Exception in fetch_feed is caught and reported."""
-        searcher = RSSSearcher(feeds=[("Bad", "https://bad.com/feed")])
+        searcher = RSSSearcher(feeds=[("Bad", "https://bad.com/feed", 20)])
 
         # Patch fetch_feed to raise an exception
         with patch.object(
             searcher, "fetch_feed", side_effect=Exception("Network error")
         ):
-            results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
+            results = searcher.fetch_all_feeds_with_results()
 
         assert results[0].ok is False
         assert "Network error" in results[0].error
@@ -237,11 +237,11 @@ class TestFetchAllFeedsWithResults:
 
         searcher = RSSSearcher(
             feeds=[
-                ("Feed C", "https://c.com/feed"),
-                ("Feed A", "https://a.com/feed"),
-                ("Feed B", "https://b.com/feed"),
+                ("Feed C", "https://c.com/feed", 20),
+                ("Feed A", "https://a.com/feed", 20),
+                ("Feed B", "https://b.com/feed", 20),
             ]
         )
-        results = searcher.fetch_all_feeds_with_results(limit_per_feed=20)
+        results = searcher.fetch_all_feeds_with_results()
 
         assert [r.name for r in results] == ["Feed C", "Feed A", "Feed B"]

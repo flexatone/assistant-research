@@ -39,12 +39,12 @@ class Article:
 class RSSSearcher:
     """Fetches and parses RSS feeds."""
 
-    def __init__(self, feeds: list[tuple[str, str]]):
+    def __init__(self, feeds: list[tuple[str, str, int]]):
         """
         Initialize the RSS searcher.
 
         Args:
-            feeds: List of (name, url) tuples.
+            feeds: List of (name, url, max_articles) tuples.
         """
         self.feeds = feeds
 
@@ -136,15 +136,9 @@ class RSSSearcher:
         except Exception as e:
             return FeedResult(name=name, url=url, articles=[], error=str(e))
 
-    def fetch_all_feeds_with_results(
-        self,
-        limit_per_feed: int,
-    ) -> list[FeedResult]:
+    def fetch_all_feeds_with_results(self) -> list[FeedResult]:
         """
         Fetch all feeds concurrently and return results for each.
-
-        Args:
-            limit_per_feed: Maximum articles per feed.
 
         Returns:
             List of FeedResult objects in original feed order.
@@ -157,31 +151,25 @@ class RSSSearcher:
                     self._fetch_feed_safe,
                     name,
                     url,
-                    limit_per_feed,
+                    limit,
                 ): name
-                for name, url in self.feeds
+                for name, url, limit in self.feeds
             }
             for future in as_completed(futures):
                 result = future.result()
                 results[result.name] = result
 
         # Return in original feed order
-        return [results[name] for name, _ in self.feeds]
+        return [results[name] for name, _, _ in self.feeds]
 
-    def fetch_all_feeds(
-        self,
-        limit_per_feed: int,
-    ) -> list[Article]:
+    def fetch_all_feeds(self) -> list[Article]:
         """
         Fetch articles from all configured feeds concurrently.
-
-        Args:
-            limit_per_feed: Maximum articles per feed.
 
         Returns:
             List of all Article objects, sorted by publish date (newest first).
         """
-        feed_results = self.fetch_all_feeds_with_results(limit_per_feed)
+        feed_results = self.fetch_all_feeds_with_results()
 
         all_articles = []
         for result in feed_results:
