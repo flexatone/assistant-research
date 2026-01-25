@@ -57,9 +57,9 @@ DEFAULT_FEEDS = [
     ("MIT Research News", "https://news.mit.edu/rss/research"),
     ("LWN.net", "https://lwn.net/headlines/rss"),
     ("HackerNoon", "https://hackernoon.com/feed"),
+    ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
 ]
 
-# ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
 
 
 # Maximum articles to fetch per feed

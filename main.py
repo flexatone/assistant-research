@@ -63,7 +63,8 @@ def cmd_search(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
+            # heading_level=2 since relevance_scorer prompt uses # for section headers
+            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS, heading_level=2)
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"
@@ -162,7 +163,8 @@ def cmd_digest(args):
         with GitHubProfiler() as profiler:
             builder = ProfileBuilder(profiler)
             profile = builder.build_profile()
-            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS)
+            # heading_level=3 since digest_writer prompt uses ## for section headers
+            profile_summary = builder.summarize_for_llm(config.INCLUDE_DIFFS, heading_level=3)
 
         print(
             f"Profile built: {len(profile.active_repos)} repos, {len(profile.recent_commits)} commits"

@@ -38,17 +38,32 @@ class DigestWriter(AnthropicClientBase):
 {chr(10).join(articles_text)}
 
 ## Task
-Create a concise, well-organized digest that:
+Create a concise, well-organized digest. Do not include routine language or package updates in the Executive Summary or Top Picks sections.
 
 1. **Executive Summary** (2-5 sentences): What's most important for this developer now?
 
-2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation of why each matters to their current work. Include the article URL and relevance score.
+2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation (1-2 sentences) of why each matters to their current work. Order by relevance; do not categorize by topic. Use this format:
 
-3. **Worth a Look** (remaining articles): Quick one-line mentions of other relevant articles, grouped by theme if possible. Include URLs and relevance scores.
+    Number. Title
+    URL
+    Relevance Score
+    Explanation (1-2 sentences)
 
-4. **Trends & Insights**: Any patterns you notice across the articles that relate to the developer's work (e.g., "Several articles about X which connects to your work on Y").
+3. **Worth a Look** (remaining articles): Quick one-line mentions of other relevant articles, grouped by theme. Use this format:
 
-Write in a friendly, concise tone. Use markdown formatting. Focus on actionable insights - what should they read and why it matters to their specific work."""
+    Theme
+        * Title as link (relevance): mention
+
+4. **Updates & Releases**: Updates to languages or packages the developer uses (based on their profile). Use this format:
+
+    Language or Package
+        * Title as link (relevance): mention
+
+5. **Trends & Insights**: Patterns across the articles that relate to the developer's work (e.g., "Several articles about X which connects to your work on Y").
+
+6. **Next Steps**: What should the developer prioritize, explore further, or create new?
+
+Write in a professional, concise tone. Use markdown formatting. Focus on actionable insights."""
 
     def generate_digest(
         self,

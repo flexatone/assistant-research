@@ -243,44 +243,55 @@ class ProfileBuilder:
 
         return self._profile
 
-    def summarize_for_llm(self, include_diffs: bool) -> str:
+    def summarize_for_llm(self, include_diffs: bool, heading_level: int = 1) -> str:
+        """
+        Format the profile as a text summary suitable for an LLM.
+
+        Args:
+            include_diffs: Whether to include code diffs.
+            heading_level: Base heading level (1 = #, 2 = ##, etc.)
+        """
         if self._profile is None:
             self.build_profile()
 
         profile = self._profile
+        h1 = "#" * heading_level
+        h2 = "#" * (heading_level + 1)
+        h3 = "#" * (heading_level + 2)
+
         lines = []
-        lines.append(f"# Historical Activities")
+        lines.append(f"{h1} Historical Activities")
 
         # Context sections from external URLs
         for section in profile.context_sections:
             if section.entries:
-                lines.append(f"## {section.title}")
+                lines.append(f"{h2} {section.title}")
                 for entry in section.entries:
                     # Format each entry as JSON for flexibility
                     lines.append(f"- {json.dumps(entry)}")
                 lines.append("")
 
-        lines.append(f"# Recent Activity In GitHub")
+        lines.append(f"{h1} Recent Activity In GitHub")
         lines.append(
             f"Period: {profile.time_range[0].strftime('%Y-%m-%d')} to {profile.time_range[1].strftime('%Y-%m-%d')}"
         )
 
         # Languages
         if profile.languages:
-            lines.append("## Languages")
+            lines.append(f"{h2} Languages")
             for lang, count in sorted(profile.languages.items(), key=lambda x: -x[1]):
                 lines.append(f"- {lang}: {count} repos")
             lines.append("")
 
         # Topics
         if profile.topics:
-            lines.append("## Topics/Tags")
+            lines.append(f"{h2} Topics/Tags")
             lines.append(", ".join(profile.topics))
             lines.append("")
 
         # Active repositories
         if profile.active_repos:
-            lines.append("## Active Repositories")
+            lines.append(f"{h2} Active Repositories")
             for repo in profile.active_repos:
                 desc = f" - {repo.description}" if repo.description else ""
                 lines.append(
@@ -292,10 +303,10 @@ class ProfileBuilder:
 
         # Pull requests
         if profile.recent_prs:
-            lines.append("## Recent Pull Requests")
+            lines.append(f"{h2} Recent Pull Requests")
             for pr in profile.recent_prs:
                 status = "merged" if pr.state == "closed" else pr.state
-                lines.append(f"### {pr.repo}#{pr.number}: {pr.title}")
+                lines.append(f"{h3} {pr.repo}#{pr.number}: {pr.title}")
                 lines.append(
                     f"Status: {status} | Created: {pr.created_at.strftime('%Y-%m-%d')}"
                 )
@@ -305,10 +316,10 @@ class ProfileBuilder:
 
         # Issues
         if profile.recent_issues:
-            lines.append("## Recent Issues")
+            lines.append(f"{h2} Recent Issues")
             for issue in profile.recent_issues:
                 labels = f" [{', '.join(issue.labels)}]" if issue.labels else ""
-                lines.append(f"### {issue.repo}#{issue.number}: {issue.title}{labels}")
+                lines.append(f"{h3} {issue.repo}#{issue.number}: {issue.title}{labels}")
                 lines.append(
                     f"Status: {issue.state} | Created: {issue.created_at.strftime('%Y-%m-%d')}"
                 )
@@ -318,9 +329,9 @@ class ProfileBuilder:
 
         # Recent commits
         if profile.recent_commits:
-            lines.append("## Recent Additions within Repositories")
+            lines.append(f"{h2} Recent Additions within Repositories")
             for commit in profile.recent_commits:
-                lines.append(f"### {commit.repo} - {commit.sha}")
+                lines.append(f"{h3} {commit.repo} - {commit.sha}")
                 # lines.append(f"Date: {commit.date.strftime('%Y-%m-%d %H:%M')}")
                 lines.append(f"Message: {commit.message}")
                 # lines.append(f"Changes: +{commit.additions}/-{commit.deletions}")

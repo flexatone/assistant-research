@@ -24,7 +24,6 @@ class RelevanceScorer(AnthropicClientBase):
     def _build_scoring_prompt(
         self, profile_summary: str, articles: list[Article]
     ) -> str:
-        "Build the prompt for scoring articles."
         articles_text = []
         for i, article in enumerate(articles):
             summary_part = f"\n   Summary: {article.summary}" if article.summary else ""
@@ -32,16 +31,16 @@ class RelevanceScorer(AnthropicClientBase):
                 f"{i + 1}. [{article.source}] {article.title}{summary_part}"
             )
 
-        return f"""You are evaluating articles for relevance to a software developer's interests based on their recent GitHub activity.
+        return f"""You are evaluating articles for relevance to a software developer's interests.
 
-## Developer Profile
+# Developer Profile
 {profile_summary}
 
-## Articles to Score
+# Articles to Score
 {chr(10).join(articles_text)}
 
-## Task
-Score each article from 0.0 to 1.0 based on how relevant it is to this developer's interests:
+# Task
+Score each article from 0.0 to 1.0 in 0.5 increments based on how relevant it is to this developer's interests:
 - 0.0-0.3: Not relevant (different domain, technology, or focus area)
 - 0.4-0.5: Marginally relevant (tangentially related topics)
 - 0.6-0.7: Relevant (related to their technologies or interests)
