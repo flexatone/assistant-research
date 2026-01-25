@@ -40,7 +40,9 @@ class DigestWriter(AnthropicClientBase):
 {chr(10).join(articles_text)}
 
 ## Task
-Create a concise, well-organized digest. Do not include routine language or package updates in the Executive Summary or Top Picks sections.
+Create a concise, well-organized digest.
+
+Do not include language or package version updates (e.g. Python, Rust) in the Executive Summary or Top Picks sections.
 
 1. **Executive Summary** (2-6 sentences): What's most important for this developer now?
 
