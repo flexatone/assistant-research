@@ -1,10 +1,11 @@
 "LLM-based relevance scoring for articles."
 
 import json
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Optional
+
+from anthropic.types import TextBlock
 
 from . import config
 from .anthropic_client import AnthropicClientBase
@@ -23,25 +24,13 @@ class ScoredArticle:
 class RelevanceScorer(AnthropicClientBase):
     "Uses Anthropic API to score article relevance to a user profile."
 
-    def _build_scoring_prompt(
-        self, profile_summary: str, articles: list[Article]
-    ) -> str:
-        articles_text = []
-        for i, article in enumerate(articles):
-            summary_part = f"\n   Summary: {article.summary}" if article.summary else ""
-            articles_text.append(
-                f"{i + 1}. [{article.source}] {article.title}{summary_part}"
-            )
-
+    def _build_system_prompt(self, profile_summary: str) -> str:
         return f"""You are evaluating articles for relevance to a software developer's interests.
 
 # Developer Profile
 {profile_summary}
 
-# Articles to Score
-{chr(10).join(articles_text)}
-
-# Task
+# Scoring Guidelines
 Score each article from 0.0 to 1.0 in 0.5 increments based on how relevant it is to this developer's interests:
 - 0.0-0.3: Not relevant (different domain, technology, or focus area)
 - 0.4-0.5: Marginally relevant (tangentially related topics)
@@ -55,6 +44,16 @@ Respond with a JSON array of objects, one per article, in order:
 ]
 
 Only output the JSON array, no other text."""
+
+    def _build_user_prompt(self, articles: list[Article]) -> str:
+        articles_text = []
+        for i, article in enumerate(articles):
+            summary_part = f"\n   Summary: {article.summary}" if article.summary else ""
+            articles_text.append(
+                f"{i + 1}. [{article.source}] {article.title}{summary_part}"
+            )
+        return f"""# Articles to Score
+{chr(10).join(articles_text)}"""
 
     def _parse_scores(
         self, response_text: str, articles: list[Article]
@@ -104,16 +103,25 @@ Only output the JSON array, no other text."""
         if not articles:
             return []
 
-        prompt = self._build_scoring_prompt(profile_summary, articles)
+        system_prompt = self._build_system_prompt(profile_summary)
+        user_prompt = self._build_user_prompt(articles)
 
         response = self.client.messages.create(
             model=config.SCORING_MODEL,
             max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
+            system=[
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=[{"role": "user", "content": user_prompt}],
         )
 
-        response_text = response.content[0].text
-        return self._parse_scores(response_text, articles)
+        block = response.content[0]
+        assert isinstance(block, TextBlock)
+        return self._parse_scores(block.text, articles)
 
     def score_articles(
         self,

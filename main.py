@@ -202,7 +202,7 @@ def cmd_digest(args):
                     deduped = original_count - len(articles)
                     if deduped > 0:
                         print(
-                            f"Filtered {deduped} articles from last {len(recent_issues)} digests"
+                            f"Removed {deduped} articles from last {len(recent_issues)} digests"
                         )
                         print()
 

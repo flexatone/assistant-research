@@ -1,5 +1,7 @@
 """Generates digests combining user profile and relevant articles."""
 
+from anthropic.types import TextBlock
+
 from . import config
 from .anthropic_client import AnthropicClientBase
 from .relevance_scorer import ScoredArticle
@@ -40,9 +42,9 @@ class DigestWriter(AnthropicClientBase):
 ## Task
 Create a concise, well-organized digest. Do not include routine language or package updates in the Executive Summary or Top Picks sections.
 
-1. **Executive Summary** (2-5 sentences): What's most important for this developer now?
+1. **Executive Summary** (2-6 sentences): What's most important for this developer now?
 
-2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation (1-2 sentences) of why each matters to their current work. Order by relevance; do not categorize by topic. Use this format:
+2. **Top Picks** (up to {config.DIGEST_TOP_PICKS} articles): The most relevant articles with a brief explanation (1-3 sentences) of why each matters to their current work. Order by relevance; do not categorize by topic. Use this format:
 
     Number. Title
     URL
@@ -71,14 +73,9 @@ Write in a professional, concise tone. Use markdown formatting. Focus on actiona
         scored_articles: list[ScoredArticle],
     ) -> str:
         """
-        Generate a digest combining the profile and relevant articles.
-
         Args:
             profile_summary: LLM-formatted summary of user's GitHub activity.
             scored_articles: List of scored articles, sorted by relevance.
-
-        Returns:
-            Formatted digest as a markdown string.
         """
         if not scored_articles:
             return "# Your Digest\n\nNo relevant articles were found matching your recent activity."
@@ -91,4 +88,6 @@ Write in a professional, concise tone. Use markdown formatting. Focus on actiona
             messages=[{"role": "user", "content": prompt}],
         )
 
-        return response.content[0].text
+        block = response.content[0]
+        assert isinstance(block, TextBlock)
+        return block.text

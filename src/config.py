@@ -57,6 +57,7 @@ DEFAULT_FEEDS = [
     ("MIT Research News", "https://news.mit.edu/rss/research"),
     ("LWN.net", "https://lwn.net/headlines/rss"),
     ("HackerNoon", "https://hackernoon.com/feed"),
+    ("O'Reilly Radar", "https://www.oreilly.com/radar/feed"),
     ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss"),
 ]
 
