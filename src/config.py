@@ -61,7 +61,6 @@ DEFAULT_FEEDS = [
 ]
 
 
-
 # Maximum articles to fetch per feed
 MAX_ARTICLES_PER_FEED = 20
 
