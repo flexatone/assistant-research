@@ -8,8 +8,6 @@ from typing import Optional
 
 import feedparser
 
-from . import config
-
 
 @dataclass(frozen=True)
 class FeedResult:
@@ -82,13 +80,18 @@ class RSSSearcher:
         Args:
             name: Display name for the feed source.
             url: URL of the RSS feed.
-            limit: Maximum articles to fetch. Defaults to config.MAX_ARTICLES_PER_FEED.
+            limit: Maximum articles to fetch.
 
         Returns:
             List of Article objects.
         """
         try:
-            feed = feedparser.parse(url)
+            feed = feedparser.parse(
+                url,
+                request_headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                },
+            )
         except Exception:
             return []
 

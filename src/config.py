@@ -59,6 +59,8 @@ DEFAULT_FEEDS = [
     ("O'Reilly Radar", "https://www.oreilly.com/radar/feed", 20),
     ("Rust Blog", "https://blog.rust-lang.org/feed.xml", 4),
     ("Python Insider", "https://blog.python.org/feeds/posts/default?alt=rss", 2),
+    ("ACM News", "https://cacm.acm.org/section/news/feed", 20),
+    ("ACM Research", "https://cacm.acm.org/section/research/feed", 20),
 ]
 
 PROFILE_CONTEXT = [
