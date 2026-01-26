@@ -6,6 +6,7 @@ from datetime import datetime
 from time import mktime
 from typing import Optional
 
+import cloudscraper
 import feedparser
 
 
@@ -86,12 +87,10 @@ class RSSSearcher:
             List of Article objects.
         """
         try:
-            feed = feedparser.parse(
-                url,
-                request_headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                },
-            )
+            scraper = cloudscraper.create_scraper()
+            response = scraper.get(url, timeout=15)
+            response.raise_for_status()
+            feed = feedparser.parse(response.text)
         except Exception:
             return []
 

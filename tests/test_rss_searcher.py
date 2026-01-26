@@ -30,11 +30,26 @@ def make_feed(entries: list, bozo: bool = False):
     return feed
 
 
+def mock_scraper():
+    """Create a mock cloudscraper that returns a successful response."""
+    mock_response = MagicMock()
+    mock_response.text = "<rss></rss>"
+    mock_response.raise_for_status = MagicMock()
+
+    mock_scraper_instance = MagicMock()
+    mock_scraper_instance.get.return_value = mock_response
+
+    mock_create = MagicMock(return_value=mock_scraper_instance)
+    return mock_create
+
+
 class TestFetchFeed:
     """Tests for fetch_feed method."""
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_success(self, mock_parse):
+    def test_fetch_feed_success(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed(
             [
                 make_entry(
@@ -61,8 +76,10 @@ class TestFetchFeed:
         assert articles[0].summary == "Summary 1"
         assert articles[0].source == "Test Feed"
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_empty(self, mock_parse):
+    def test_fetch_feed_empty(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed([])
 
         searcher = RSSSearcher(feeds=[])
@@ -70,8 +87,10 @@ class TestFetchFeed:
 
         assert len(articles) == 0
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_limit(self, mock_parse):
+    def test_fetch_feed_limit(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed(
             [make_entry(f"Article {i}", f"https://example.com/{i}") for i in range(10)]
         )
@@ -81,9 +100,11 @@ class TestFetchFeed:
 
         assert len(articles) == 3
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_bozo_with_entries(self, mock_parse):
+    def test_fetch_feed_bozo_with_entries(self, mock_parse, mock_cloudscraper):
         """Bozo feeds with entries should still return articles."""
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed(
             [make_entry("Article 1", "https://example.com/1")], bozo=True
         )
@@ -93,9 +114,11 @@ class TestFetchFeed:
 
         assert len(articles) == 1
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_bozo_no_entries(self, mock_parse):
+    def test_fetch_feed_bozo_no_entries(self, mock_parse, mock_cloudscraper):
         """Bozo feeds without entries should return empty."""
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed([], bozo=True)
 
         searcher = RSSSearcher(feeds=[])
@@ -103,8 +126,10 @@ class TestFetchFeed:
 
         assert len(articles) == 0
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_feed_skips_entries_without_link(self, mock_parse):
+    def test_fetch_feed_skips_entries_without_link(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         entry_no_link = MagicMock()
         entry_no_link.title = "No Link"
         entry_no_link.link = None
@@ -127,8 +152,10 @@ class TestFetchFeed:
 class TestFetchAllFeeds:
     """Tests for fetch_all_feeds method."""
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_all_feeds(self, mock_parse):
+    def test_fetch_all_feeds(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed(
             [
                 make_entry(
@@ -150,24 +177,22 @@ class TestFetchAllFeeds:
         assert len(articles) == 2
         assert mock_parse.call_count == 2
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_fetch_all_feeds_sorted_by_date(self, mock_parse):
-        def side_effect(url):
-            if "a.com" in url:
+    def test_fetch_all_feeds_sorted_by_date(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
+        # Return articles with different dates to test sorting
+        call_count = [0]
+
+        def side_effect(content):
+            call_count[0] += 1
+            if call_count[0] == 1:
                 return make_feed(
-                    [
-                        make_entry(
-                            "Old", "https://a.com/1", published=datetime(2024, 1, 1)
-                        )
-                    ]
+                    [make_entry("Old", "https://a.com/1", published=datetime(2024, 1, 1))]
                 )
             else:
                 return make_feed(
-                    [
-                        make_entry(
-                            "New", "https://b.com/1", published=datetime(2024, 1, 15)
-                        )
-                    ]
+                    [make_entry("New", "https://b.com/1", published=datetime(2024, 1, 15))]
                 )
 
         mock_parse.side_effect = side_effect
@@ -187,8 +212,10 @@ class TestFetchAllFeeds:
 class TestFetchAllFeedsWithResults:
     """Tests for fetch_all_feeds_with_results method."""
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_returns_feed_results(self, mock_parse):
+    def test_returns_feed_results(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed(
             [
                 make_entry("Article 1", "https://example.com/1"),
@@ -208,8 +235,10 @@ class TestFetchAllFeedsWithResults:
         assert results[0].ok is True
         assert len(results[0].articles) == 1
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_handles_empty_feed(self, mock_parse):
+    def test_handles_empty_feed(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed([])
 
         searcher = RSSSearcher(feeds=[("Empty", "https://empty.com/feed", 20)])
@@ -231,8 +260,10 @@ class TestFetchAllFeedsWithResults:
         assert results[0].ok is False
         assert "Network error" in results[0].error
 
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
-    def test_maintains_feed_order(self, mock_parse):
+    def test_maintains_feed_order(self, mock_parse, mock_cloudscraper):
+        mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed([make_entry("Art", "https://x.com/1")])
 
         searcher = RSSSearcher(

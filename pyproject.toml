@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv==1.2.1",
     "anthropic==0.76.0",
     "feedparser==6.0.12",
+    "cloudscraper==1.2.71",
 ]
 
 [project.optional-dependencies]
