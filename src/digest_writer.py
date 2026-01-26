@@ -65,7 +65,7 @@ Do not include language or package version updates (e.g. Python, Rust) in the Ex
 
 5. **Trends & Insights**: Patterns across the articles that relate to the developer's work (e.g., "Several articles about X which connects to your work on Y").
 
-6. **Next Steps**: What should the developer prioritize, explore further, or create new?
+6. **Next Steps**: What should the developer prioritize, explore further, or create new? Suggest new research, new article topics, new features for existing tools, or entirely new tools or systems.
 
 Write in a professional, concise tone. Use markdown formatting. Focus on actionable insights."""
 
