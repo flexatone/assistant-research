@@ -74,7 +74,7 @@ class RSSSearcher:
         name: str,
         url: str,
         limit: int,
-    ) -> list[Article]:
+    ) -> FeedResult:
         """
         Fetch and parse a single RSS feed.
 
@@ -91,12 +91,14 @@ class RSSSearcher:
             response = scraper.get(url, timeout=15)
             response.raise_for_status()
             feed = feedparser.parse(response.text)
-        except Exception:
-            return []
+        except Exception as e:
+            return FeedResult(name=name, url=url, articles=[], error=str(e))
 
         if feed.bozo and not feed.entries:
             # Feed had errors and no entries
-            return []
+            return FeedResult(
+                name=name, url=url, articles=[], error="No articles returned"
+            )
 
         articles = []
         for entry in feed.entries[:limit]:
@@ -118,25 +120,7 @@ class RSSSearcher:
                     source=name,
                 )
             )
-
-        return articles
-
-    def _fetch_feed_safe(
-        self,
-        name: str,
-        url: str,
-        limit: int,
-    ) -> FeedResult:
-        """Fetch a feed and return a FeedResult (never raises)."""
-        try:
-            articles = self.fetch_feed(name, url, limit)
-            if articles:
-                return FeedResult(name=name, url=url, articles=articles)
-            return FeedResult(
-                name=name, url=url, articles=[], error="No articles returned"
-            )
-        except Exception as e:
-            return FeedResult(name=name, url=url, articles=[], error=str(e))
+        return FeedResult(name=name, url=url, articles=articles)
 
     def fetch_all_feeds_with_results(self) -> list[FeedResult]:
         """
@@ -150,7 +134,7 @@ class RSSSearcher:
         with ThreadPoolExecutor(max_workers=len(self.feeds)) as executor:
             futures = {
                 executor.submit(
-                    self._fetch_feed_safe,
+                    self.fetch_feed,
                     name,
                     url,
                     limit,

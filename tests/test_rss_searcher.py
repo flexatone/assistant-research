@@ -68,13 +68,15 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
+        result = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
 
-        assert len(articles) == 2
-        assert articles[0].title == "Article 1"
-        assert articles[0].url == "https://example.com/1"
-        assert articles[0].summary == "Summary 1"
-        assert articles[0].source == "Test Feed"
+        assert isinstance(result, FeedResult)
+        assert result.ok is True
+        assert len(result.articles) == 2
+        assert result.articles[0].title == "Article 1"
+        assert result.articles[0].url == "https://example.com/1"
+        assert result.articles[0].summary == "Summary 1"
+        assert result.articles[0].source == "Test Feed"
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
@@ -83,9 +85,9 @@ class TestFetchFeed:
         mock_parse.return_value = make_feed([])
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Empty Feed", "https://test.com/feed", limit=20)
+        result = searcher.fetch_feed("Empty Feed", "https://test.com/feed", limit=20)
 
-        assert len(articles) == 0
+        assert len(result.articles) == 0
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
@@ -96,9 +98,9 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=3)
+        result = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=3)
 
-        assert len(articles) == 3
+        assert len(result.articles) == 3
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
@@ -110,21 +112,23 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
+        result = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
 
-        assert len(articles) == 1
+        assert result.ok is True
+        assert len(result.articles) == 1
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
     def test_fetch_feed_bozo_no_entries(self, mock_parse, mock_cloudscraper):
-        """Bozo feeds without entries should return empty."""
+        """Bozo feeds without entries should return error."""
         mock_cloudscraper.return_value = mock_scraper().return_value
         mock_parse.return_value = make_feed([], bozo=True)
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
+        result = searcher.fetch_feed("Bozo Feed", "https://test.com/feed", limit=20)
 
-        assert len(articles) == 0
+        assert result.ok is False
+        assert result.error == "No articles returned"
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
     @patch("src.rss_searcher.feedparser.parse")
@@ -143,10 +147,23 @@ class TestFetchFeed:
         )
 
         searcher = RSSSearcher(feeds=[])
-        articles = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
+        result = searcher.fetch_feed("Test Feed", "https://test.com/feed", limit=20)
 
-        assert len(articles) == 1
-        assert articles[0].title == "Has Link"
+        assert len(result.articles) == 1
+        assert result.articles[0].title == "Has Link"
+
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
+    def test_fetch_feed_network_error(self, mock_cloudscraper):
+        """Network errors are captured in FeedResult."""
+        mock_scraper_instance = MagicMock()
+        mock_scraper_instance.get.side_effect = Exception("Connection timeout")
+        mock_cloudscraper.return_value = mock_scraper_instance
+
+        searcher = RSSSearcher(feeds=[])
+        result = searcher.fetch_feed("Bad Feed", "https://bad.com/feed", limit=20)
+
+        assert result.ok is False
+        assert "Connection timeout" in result.error
 
 
 class TestFetchAllFeeds:
@@ -188,11 +205,19 @@ class TestFetchAllFeeds:
             call_count[0] += 1
             if call_count[0] == 1:
                 return make_feed(
-                    [make_entry("Old", "https://a.com/1", published=datetime(2024, 1, 1))]
+                    [
+                        make_entry(
+                            "Old", "https://a.com/1", published=datetime(2024, 1, 1)
+                        )
+                    ]
                 )
             else:
                 return make_feed(
-                    [make_entry("New", "https://b.com/1", published=datetime(2024, 1, 15))]
+                    [
+                        make_entry(
+                            "New", "https://b.com/1", published=datetime(2024, 1, 15)
+                        )
+                    ]
                 )
 
         mock_parse.side_effect = side_effect
@@ -245,17 +270,17 @@ class TestFetchAllFeedsWithResults:
         results = searcher.fetch_all_feeds_with_results()
 
         assert results[0].ok is False
-        assert results[0].error == "No articles returned"
+        assert len(results[0].articles) == 0
 
-    def test_handles_fetch_feed_exception(self):
-        """Exception in fetch_feed is caught and reported."""
+    @patch("src.rss_searcher.cloudscraper.create_scraper")
+    def test_handles_network_error(self, mock_cloudscraper):
+        """Network errors are captured in FeedResult."""
+        mock_scraper_instance = MagicMock()
+        mock_scraper_instance.get.side_effect = Exception("Network error")
+        mock_cloudscraper.return_value = mock_scraper_instance
+
         searcher = RSSSearcher(feeds=[("Bad", "https://bad.com/feed", 20)])
-
-        # Patch fetch_feed to raise an exception
-        with patch.object(
-            searcher, "fetch_feed", side_effect=Exception("Network error")
-        ):
-            results = searcher.fetch_all_feeds_with_results()
+        results = searcher.fetch_all_feeds_with_results()
 
         assert results[0].ok is False
         assert "Network error" in results[0].error
