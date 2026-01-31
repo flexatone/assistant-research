@@ -101,4 +101,4 @@ DIGEST_TOP_PICKS = 10
 DIGEST_ISSUE_REPO: str | None = "flexatone/assistant-research"
 
 # Number of past digest issues to check for deduplication
-DIGEST_LOOKBACK = 3
+DIGEST_LOOKBACK = 5
