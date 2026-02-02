@@ -233,7 +233,7 @@ def cmd_digest(args):
 
             print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
             pacific = ZoneInfo("America/Los_Angeles")
-            title = datetime.now(pacific).strftime("Digest: %Y-%m-%d %H:%M")
+            title = datetime.now(pacific).strftime("Digest: %A, %Y-%m-%d, %H:%M")
             with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
                 issue_url = profiler.create_issue(
                     config.DIGEST_ISSUE_REPO, title, digest

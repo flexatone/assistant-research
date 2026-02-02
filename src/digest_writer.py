@@ -15,7 +15,6 @@ class DigestWriter(AnthropicClientBase):
         profile_summary: str,
         scored_articles: list[ScoredArticle],
     ) -> str:
-        """Build the prompt for digest generation."""
         articles_text = []
         for scored in scored_articles:
             article = scored.article
@@ -74,11 +73,6 @@ Write in a professional, concise tone. Use markdown formatting. Focus on actiona
         profile_summary: str,
         scored_articles: list[ScoredArticle],
     ) -> str:
-        """
-        Args:
-            profile_summary: LLM-formatted summary of user's GitHub activity.
-            scored_articles: List of scored articles, sorted by relevance.
-        """
         if not scored_articles:
             return "# Your Digest\n\nNo relevant articles were found matching your recent activity."
 
