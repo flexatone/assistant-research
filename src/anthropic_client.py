@@ -14,4 +14,4 @@ class AnthropicClientBase:
         """
         self.client = Anthropic(api_key=api_key)
         if os.getenv("GITHUB_ACTIONS") != "true" and os.getenv("CI") != "true":
-            self.client = Shuntly.shunt(self.client, SinkPipe('/tmp/shuntly.fifo'))
+            self.client = Shuntly.shunt(self.client, SinkPipe("/tmp/shuntly.fifo"))
