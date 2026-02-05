@@ -13,6 +13,7 @@ dependencies = [
     "anthropic==0.76.0",
     "feedparser==6.0.12",
     "cloudscraper==1.2.71",
+    "shuntly==0.1.0",
 ]
 
 [project.optional-dependencies]
