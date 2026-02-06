@@ -1,7 +1,7 @@
 from typing import Optional
 import os
 from anthropic import Anthropic
-from shuntly import Shuntly, SinkPipe
+from shuntly import shunt, SinkPipe
 
 
 class AnthropicClientBase:
@@ -14,4 +14,4 @@ class AnthropicClientBase:
         """
         self.client = Anthropic(api_key=api_key)
         if os.getenv("GITHUB_ACTIONS") != "true" and os.getenv("CI") != "true":
-            self.client = Shuntly.shunt(self.client, SinkPipe("/tmp/shuntly.fifo"))
+            self.client = shunt(self.client, SinkPipe("/tmp/shuntly.fifo"))
