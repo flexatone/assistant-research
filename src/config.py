@@ -36,10 +36,10 @@ MAX_ISSUES = 50
 
 # Maximum size (in characters) for a single file's diff patch
 # Patches larger than this will be truncated
-MAX_DIFF_PATCH_SIZE = 2000
+MAX_DIFF_PATCH_SIZE = 1000   # was 2000
 
 # Maximum total diff size per commit (sum of all file patches)
-MAX_DIFF_TOTAL_SIZE = 10000
+MAX_DIFF_TOTAL_SIZE = 8000  # was 10000
 
 # =============================================================================
 # Profile Sources
