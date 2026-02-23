@@ -3,7 +3,8 @@ name: Daily Research Digest
 on:
   schedule:
     # 6:00 AM Pacific (14:00 UTC) - runs at 7:00 AM during daylight saving
-    - cron: '0 14 * * *'
+    # Monday through Friday only
+    - cron: '0 14 * * 1-5'
   workflow_dispatch:  # Allow manual trigger
 
 permissions:
