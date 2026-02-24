@@ -122,6 +122,13 @@ class ProfileBuilder:
         # Filter to repos with recent activity
         active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
 
+        # Filter out repos belonging to excluded organizations
+        if config.EXCLUDED_ORGS:
+            active_repos = [
+                r for r in active_repos 
+                if r.full_name.split('/')[0] not in config.EXCLUDED_ORGS
+            ]
+
         # Fetch commits, PRs, issues, and context concurrently
         all_commits: list[Commit] = []
         repo_commit_counts: dict[str, int] = {}
