@@ -12,6 +12,10 @@ load_dotenv()
 GITHUB_TOKEN = os.getenv("USER_GITHUB_TOKEN")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+# Comma-separated list of GitHub organizations whose repos should be excluded
+EXCLUDED_ORGS_STR = os.getenv("EXCLUDED_ORGS", "")
+EXCLUDED_ORGS = [org.strip() for org in EXCLUDED_ORGS_STR.split(",") if org.strip()]
+
 # =============================================================================
 # GitHub Profiler Settings
 # =============================================================================

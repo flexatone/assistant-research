@@ -119,8 +119,13 @@ class ProfileBuilder:
         # Fetch repos first to know where to look for commits
         repos = self.profiler.get_user_repos(config.MAX_REPOS)
 
-        # Filter to repos with recent activity
-        active_repos = [r for r in repos if r.pushed_at and r.pushed_at >= since]
+        # Filter to repos with recent activity and exclude repos from specified organizations
+        active_repos = [
+            r for r in repos 
+            if r.pushed_at and r.pushed_at >= since
+            and (not config.EXCLUDED_ORGS 
+                 or ('/' not in r.full_name or r.full_name.split('/', 1)[0] not in config.EXCLUDED_ORGS))
+        ]
 
         # Fetch commits, PRs, issues, and context concurrently
         all_commits: list[Commit] = []
