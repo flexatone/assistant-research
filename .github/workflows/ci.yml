@@ -8,6 +8,9 @@ on:
     branches:
       - default
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test / ${{ matrix.os.name }} / Python ${{ matrix.python.version }}
