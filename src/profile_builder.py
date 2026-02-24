@@ -126,7 +126,7 @@ class ProfileBuilder:
         if config.EXCLUDED_ORGS:
             active_repos = [
                 r for r in active_repos 
-                if r.full_name.split('/')[0] not in config.EXCLUDED_ORGS
+                if '/' in r.full_name and r.full_name.split('/', 1)[0] not in config.EXCLUDED_ORGS
             ]
 
         # Fetch commits, PRs, issues, and context concurrently
