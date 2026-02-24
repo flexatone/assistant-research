@@ -120,11 +120,17 @@ class ProfileBuilder:
         repos = self.profiler.get_user_repos(config.MAX_REPOS)
 
         # Filter to repos with recent activity and exclude repos from specified organizations
-        active_repos = [
-            r for r in repos 
-            if r.pushed_at and r.pushed_at >= since
-            and (not config.EXCLUDED_ORGS or ('/' in r.full_name and r.full_name.split('/', 1)[0] not in config.EXCLUDED_ORGS))
-        ]
+        def should_include_repo(r: Repo) -> bool:
+            """Check if repo should be included based on recency and organization."""
+            if not (r.pushed_at and r.pushed_at >= since):
+                return False
+            if config.EXCLUDED_ORGS and '/' in r.full_name:
+                owner = r.full_name.split('/', 1)[0]
+                if owner in config.EXCLUDED_ORGS:
+                    return False
+            return True
+        
+        active_repos = [r for r in repos if should_include_repo(r)]
 
         # Fetch commits, PRs, issues, and context concurrently
         all_commits: list[Commit] = []
