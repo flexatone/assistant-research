@@ -46,6 +46,10 @@ MAX_PRS = 50
 # Maximum issues to fetch
 MAX_ISSUES = 50
 
+# Maximum concurrent requests while building the profile; bursts of dozens of
+# simultaneous connections to api.github.com can fail during the TLS handshake
+MAX_PROFILE_WORKERS = 8
+
 # Maximum size (in characters) for a single file's diff patch
 # Patches larger than this will be truncated
 MAX_DIFF_PATCH_SIZE = 1000   # was 2000

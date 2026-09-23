@@ -137,7 +137,9 @@ class ProfileBuilder:
         context_configs = (
             config.PROFILE_CONTEXT if hasattr(config, "PROFILE_CONTEXT") else []
         )
-        max_workers = len(active_repos) + 2 + len(context_configs)
+        max_workers = min(
+            config.MAX_PROFILE_WORKERS, len(active_repos) + 2 + len(context_configs)
+        )
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks

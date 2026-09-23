@@ -210,4 +210,4 @@ class TestWriteRetries:
         with GitHubProfiler(token="t") as profiler:
             with pytest.raises(httpx.ConnectError):
                 profiler.create_issue("user/repo", "t", "b")
-        assert mock_client.post.call_count == github_profiler.WRITE_ATTEMPTS
+        assert mock_client.post.call_count == github_profiler.REQUEST_ATTEMPTS

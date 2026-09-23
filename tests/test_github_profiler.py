@@ -3,6 +3,9 @@
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
 
+import httpx
+import pytest
+
 from src.github_profiler import GitHubProfiler, Repo, Commit, PullRequest, Issue
 
 
@@ -28,6 +31,56 @@ class TestGetAuthenticatedUser:
             username = profiler.get_authenticated_user()
 
         assert username == "testuser"
+
+    @patch("src.github_profiler.httpx.Client")
+    def test_username_fetched_once(self, mock_client_class):
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.get.return_value = mock_response({"login": "testuser"})
+
+        with GitHubProfiler(token="fake-token") as profiler:
+            names = {profiler.get_authenticated_user() for _ in range(5)}
+
+        assert names == {"testuser"}
+        assert mock_client.get.call_count == 1
+
+
+class TestReadRetries:
+    """Tests for retrying transient failures on GET requests."""
+
+    @patch("src.github_profiler.time.sleep")
+    @patch("src.github_profiler.httpx.Client")
+    def test_retries_tls_handshake_failure(self, mock_client_class, _sleep):
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.get.side_effect = [
+            httpx.ConnectError(
+                "[SSL: TLSV1_ALERT_DECODE_ERROR] tlsv1 alert decode error (_ssl.c:1082)"
+            ),
+            mock_response({"login": "testuser"}),
+        ]
+
+        with GitHubProfiler(token="fake-token") as profiler:
+            assert profiler.get_authenticated_user() == "testuser"
+        assert mock_client.get.call_count == 2
+
+    @patch("src.github_profiler.time.sleep")
+    @patch("src.github_profiler.httpx.Client")
+    def test_does_not_retry_not_found(self, mock_client_class, _sleep):
+        request = httpx.Request("GET", "https://api.github.com/user")
+        response = MagicMock()
+        response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "404", request=request, response=httpx.Response(404, request=request)
+        )
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.get.return_value = response
+
+        with GitHubProfiler(token="fake-token") as profiler:
+            with pytest.raises(httpx.HTTPStatusError):
+                profiler.get_authenticated_user()
+        assert mock_client.get.call_count == 1
+        _sleep.assert_not_called()
 
 
 class TestGetUserRepos:

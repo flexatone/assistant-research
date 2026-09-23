@@ -50,9 +50,9 @@ class PullRequest:
     merged_at: Optional[datetime]
 
 
-# Attempts for write requests that fail with transient errors (network, 429, 5xx)
-WRITE_ATTEMPTS = 3
-WRITE_RETRY_DELAY = 2.0
+# Attempts for requests that fail with transient errors (network/TLS, 429, 5xx)
+REQUEST_ATTEMPTS = 3
+REQUEST_RETRY_DELAY = 2.0
 
 
 def _is_transient(e: httpx.HTTPError) -> bool:
@@ -90,6 +90,7 @@ class GitHubProfiler:
             },
             timeout=30.0,
         )
+        self._username: Optional[str] = None
 
     def __enter__(self):
         return self
@@ -100,26 +101,28 @@ class GitHubProfiler:
     def close(self):
         self.client.close()
 
-    def _get(self, endpoint: str, params: Optional[dict] = None) -> dict | list:
-        """Make a GET request to the GitHub API."""
-        response = self.client.get(endpoint, params=params)
-        response.raise_for_status()
-        return response.json()
-
-    def _write(self, method: str, endpoint: str, json: dict) -> dict:
-        """Make a POST/PATCH request, retrying transient failures."""
+    def _request(self, method: str, endpoint: str, **kwargs) -> dict | list:
+        """Make a request to the GitHub API, retrying transient failures."""
         send = getattr(self.client, method)
-        for attempt in range(1, WRITE_ATTEMPTS + 1):
+        for attempt in range(1, REQUEST_ATTEMPTS + 1):
             try:
-                response = send(endpoint, json=json)
+                response = send(endpoint, **kwargs)
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPError as e:
-                if attempt == WRITE_ATTEMPTS or not _is_transient(e):
+                if attempt == REQUEST_ATTEMPTS or not _is_transient(e):
                     raise
                 print(f"GitHub {method.upper()} {endpoint} failed ({e}); retrying...")
-                time.sleep(WRITE_RETRY_DELAY * attempt)
+                time.sleep(REQUEST_RETRY_DELAY * attempt)
         raise AssertionError("unreachable")
+
+    def _get(self, endpoint: str, params: Optional[dict] = None) -> dict | list:
+        """Make a GET request to the GitHub API."""
+        return self._request("get", endpoint, params=params)
+
+    def _write(self, method: str, endpoint: str, json: dict) -> dict:
+        """Make a POST/PATCH request to the GitHub API."""
+        return self._request(method, endpoint, json=json)
 
     def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
         """Parse GitHub datetime string to datetime object."""
@@ -128,9 +131,10 @@ class GitHubProfiler:
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
 
     def get_authenticated_user(self) -> str:
-        """Get the username of the authenticated user."""
-        data = self._get("/user")
-        return data["login"]
+        """Get the username of the authenticated user (fetched once, then cached)."""
+        if self._username is None:
+            self._username = self._get("/user")["login"]
+        return self._username
 
     def get_user_repos(self, limit: int) -> list[Repo]:
         """

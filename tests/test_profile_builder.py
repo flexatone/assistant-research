@@ -3,6 +3,8 @@
 from datetime import datetime, timezone, timedelta
 from unittest.mock import patch, MagicMock
 import re
+import threading
+import time
 
 from src.profile_builder import ProfileBuilder
 from src.github_profiler import GitHubProfiler, Repo, Commit
@@ -236,3 +238,71 @@ class TestBuildProfile:
         # Only testuser repo should be included (both org1 and org2 are excluded)
         assert len(profile.active_repos) == 1
         assert profile.active_repos[0].full_name == "testuser/repo1"
+
+
+class TestProfileConcurrency:
+    """The profile build limits simultaneous GitHub requests."""
+
+    @patch("src.github_profiler.httpx.Client")
+    @patch("src.config.MAX_PROFILE_WORKERS", 2)
+    @patch("src.config.EXCLUDED_ORGS", [])
+    @patch("src.config.PROFILE_CONTEXT", [])
+    @patch("src.config.INCLUDE_DIFFS", False)
+    def test_requests_bounded_by_max_workers(self, mock_client_class):
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        recent = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+
+        lock = threading.Lock()
+        active = 0
+        peak = 0
+        user_calls = 0
+
+        def get_side_effect(endpoint, params=None):
+            nonlocal active, peak, user_calls
+            if endpoint == "/user":
+                user_calls += 1
+                return MagicMock(json=lambda: {"login": "testuser"})
+            if endpoint == "/user/repos":
+                return MagicMock(
+                    json=lambda: [
+                        {
+                            "full_name": f"testuser/repo{i}",
+                            "description": "",
+                            "language": "Python",
+                            "topics": [],
+                            "pushed_at": recent,
+                        }
+                        for i in range(6)
+                    ]
+                )
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.02)
+            with lock:
+                active -= 1
+            if endpoint == "/search/issues":
+                return MagicMock(json=lambda: {"items": []})
+            if "/commits" in endpoint:
+                return MagicMock(
+                    json=lambda: [
+                        {
+                            "sha": "abc123",
+                            "commit": {
+                                "message": "Test commit",
+                                "author": {"name": "testuser", "date": recent},
+                            },
+                        }
+                    ]
+                )
+            return MagicMock(json=lambda: [])
+
+        mock_client.get.side_effect = get_side_effect
+
+        with GitHubProfiler(token="fake-token") as profiler:
+            profile = ProfileBuilder(profiler).build_profile()
+
+        assert len(profile.active_repos) == 6
+        assert peak <= 2
+        assert user_calls == 1
