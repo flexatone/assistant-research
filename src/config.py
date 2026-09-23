@@ -124,7 +124,7 @@ DIGEST_MODEL = "claude-opus-5-5"
 DIGEST_MAX_TOKENS = 16000
 
 # Number of top picks to highlight in the digest
-DIGEST_TOP_PICKS = 8
+DIGEST_TOP_PICKS = 6
 
 # Repository to post digest issues to (owner/repo format)
 # If None, --post-issue will fail
