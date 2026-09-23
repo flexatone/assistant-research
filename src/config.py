@@ -82,7 +82,7 @@ PROFILE_CONTEXT = [
 RELEVANCE_THRESHOLD = 0.6
 
 # Model to use for relevance scoring (fast and cheap)
-SCORING_MODEL = "claude-sonnet-4-5-20250929"
+SCORING_MODEL = "claude-sonnet-5"
 
 # Maximum articles to score in a single batch
 SCORING_BATCH_SIZE = 20
@@ -92,7 +92,7 @@ SCORING_BATCH_SIZE = 20
 # =============================================================================
 
 # Model to use for digest generation (more capable for synthesis)
-DIGEST_MODEL = "claude-opus-4-6"
+DIGEST_MODEL = "claude-opus-5-5"
 
 # Maximum tokens for digest output; 32k is max for opus
 DIGEST_MAX_TOKENS = 4096
