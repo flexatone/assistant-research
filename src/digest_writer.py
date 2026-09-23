@@ -87,3 +87,18 @@ Write in a professional, concise tone. Use markdown formatting. Focus on actiona
         block = response.content[0]
         assert isinstance(block, TextBlock)
         return block.text
+
+
+def format_article_list(scored_articles: list[ScoredArticle]) -> str:
+    """Format scored articles as a markdown list (no commentary), for recording selections."""
+    lines = []
+    for scored in scored_articles:
+        article = scored.article
+        date_str = (
+            article.published.strftime("%Y-%m-%d") if article.published else "Unknown"
+        )
+        lines.append(
+            f"- [{article.title}]({article.url}) — {article.source}, {date_str}, "
+            f"relevance {scored.score:.2f}"
+        )
+    return "\n".join(lines)

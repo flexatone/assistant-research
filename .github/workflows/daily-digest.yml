@@ -26,9 +26,12 @@ jobs:
       - name: Install dependencies
         run: pip install .
 
-      - name: Generate and post digest
+      - name: Generate, email digest, and record articles
         env:
           # Needs PAT with repo scope to read activity across all repos
           USER_GITHUB_TOKEN: ${{ secrets.USER_GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python main.py digest --post-issue
+          POSTMARK_SERVER_TOKEN: ${{ secrets.POSTMARK_SERVER_TOKEN }}
+          DIGEST_EMAIL_FROM: ${{ secrets.DIGEST_EMAIL_FROM }}
+          DIGEST_EMAIL_TO: ${{ secrets.DIGEST_EMAIL_TO }}
+        run: python main.py digest --send-email --post-issue

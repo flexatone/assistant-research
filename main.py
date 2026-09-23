@@ -11,7 +11,8 @@ from src.github_profiler import GitHubProfiler
 from src.profile_builder import ProfileBuilder
 from src.rss_searcher import RSSSearcher
 from src.relevance_scorer import RelevanceScorer
-from src.digest_writer import DigestWriter
+from src.digest_writer import DigestWriter, format_article_list
+from src.email_sender import render_digest_html, send_email
 from src import config
 
 
@@ -226,21 +227,53 @@ def cmd_digest(args):
                 f.write(digest)
             print(f"Digest written to {args.output}")
 
+        pacific = ZoneInfo("America/Los_Angeles")
+        now = datetime.now(pacific)
+
+        # Email first: if sending fails, no issue is recorded, so articles are not deduped
+        if args.send_email:
+            if not (
+                config.POSTMARK_SERVER_TOKEN
+                and config.DIGEST_EMAIL_FROM
+                and config.DIGEST_EMAIL_TO
+            ):
+                print(
+                    "Error: POSTMARK_SERVER_TOKEN, DIGEST_EMAIL_FROM, and DIGEST_EMAIL_TO must be set",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+            print(f"Emailing digest to {config.DIGEST_EMAIL_TO}...")
+            send_email(
+                config.POSTMARK_SERVER_TOKEN,
+                config.DIGEST_EMAIL_FROM,
+                config.DIGEST_EMAIL_TO,
+                now.strftime("Digest: %A, %Y-%m-%d"),
+                render_digest_html(digest),
+                digest,
+            )
+            print("Email sent")
+
+        # Record only the selected articles (no commentary) for later deduplication
         if args.post_issue:
             if not config.DIGEST_ISSUE_REPO:
                 print("Error: DIGEST_ISSUE_REPO not configured", file=sys.stderr)
                 sys.exit(1)
 
-            print(f"Posting digest as issue to {config.DIGEST_ISSUE_REPO}...")
-            pacific = ZoneInfo("America/Los_Angeles")
-            title = datetime.now(pacific).strftime("Digest: %A, %Y-%m-%d, %H:%M")
-            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
-                issue_url = profiler.create_issue(
-                    config.DIGEST_ISSUE_REPO, title, digest
-                )
-            print(f"Issue created: {issue_url}")
+            if scored_articles:
+                print(f"Recording articles as issue in {config.DIGEST_ISSUE_REPO}...")
+                title = now.strftime("Digest: %A, %Y-%m-%d, %H:%M")
+                with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
+                    issue_url = profiler.create_issue(
+                        config.DIGEST_ISSUE_REPO,
+                        title,
+                        format_article_list(scored_articles),
+                    )
+                print(f"Issue created: {issue_url}")
+            else:
+                print("No articles to record; skipping issue")
 
-        if not args.output and not args.post_issue:
+        if not args.output and not args.post_issue and not args.send_email:
             print(digest)
 
     except ValueError as e:
@@ -282,7 +315,12 @@ def main():
     digest_parser.add_argument(
         "--post-issue",
         action="store_true",
-        help="Post digest as a GitHub issue (requires DIGEST_ISSUE_REPO config)",
+        help="Record selected articles (no commentary) as a GitHub issue for deduplication (requires DIGEST_ISSUE_REPO config)",
+    )
+    digest_parser.add_argument(
+        "--send-email",
+        action="store_true",
+        help="Email the digest via Postmark (requires POSTMARK_SERVER_TOKEN, DIGEST_EMAIL_FROM, DIGEST_EMAIL_TO)",
     )
     digest_parser.set_defaults(func=cmd_digest)
 
