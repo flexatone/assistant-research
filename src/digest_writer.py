@@ -98,7 +98,8 @@ def format_article_list(scored_articles: list[ScoredArticle]) -> str:
             article.published.strftime("%Y-%m-%d") if article.published else "Unknown"
         )
         lines.append(
-            f"- [{article.title}]({article.url}) — {article.source}, {date_str}, "
+            # <url> keeps any parentheses in the URL intact for extract_urls_from_text
+            f"- [{article.title}](<{article.url}>) — {article.source}, {date_str}, "
             f"relevance {scored.score:.2f}"
         )
     return "\n".join(lines)

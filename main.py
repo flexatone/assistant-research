@@ -5,6 +5,8 @@ import argparse
 import re
 import sys
 from datetime import datetime
+from typing import Optional
+from urllib.error import HTTPError
 from zoneinfo import ZoneInfo
 
 from src.github_profiler import GitHubProfiler
@@ -13,16 +15,38 @@ from src.rss_searcher import RSSSearcher
 from src.relevance_scorer import RelevanceScorer
 from src.digest_writer import DigestWriter, format_article_list
 from src.email_sender import render_digest_html, send_email
-from src import config
+from src.github_profiler import Issue
+from src import config, delivery
+
+
+# URLs written as <url> (e.g. markdown link destinations from format_article_list)
+_ANGLE_URL_RE = re.compile(r"<(https?://[^<>\s]+)>")
+_BARE_URL_RE = re.compile(r"""https?://[^\s\]<>"']+""")
+
+
+def _balanced_url(url: str) -> str:
+    """Cut a URL at the first ")" that closes no "(" in it, such as the end of [text](url)."""
+    depth = 0
+    for i, ch in enumerate(url):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            if depth == 0:
+                return url[:i]
+            depth -= 1
+    return url
 
 
 def extract_urls_from_text(text: str) -> frozenset[str]:
     """Extract all URLs from markdown or plain text."""
     if not text:
         return frozenset()
-    # Match URLs in markdown links [text](url) and plain URLs
-    url_pattern = r'https?://[^\s\)\]>"\']+'
-    return frozenset(re.findall(url_pattern, text))
+    # Angle-bracketed URLs are taken verbatim, so any parentheses survive
+    urls = set(_ANGLE_URL_RE.findall(text))
+    # Bare URLs keep balanced parentheses, e.g. https://en.wikipedia.org/wiki/Foo_(bar)
+    for url in _BARE_URL_RE.findall(_ANGLE_URL_RE.sub(" ", text)):
+        urls.add(_balanced_url(url))
+    return frozenset(urls)
 
 
 def cmd_profile(args):
@@ -157,8 +181,108 @@ def cmd_test_feeds(_args):
     print(f"\n{ok_count}/{len(results)} feeds working")
 
 
+def check_digest_settings(args) -> None:
+    """Exit before any expensive work if delivery settings are missing."""
+    if args.post_issue and not config.DIGEST_ISSUE_REPO:
+        print("Error: DIGEST_ISSUE_REPO not configured", file=sys.stderr)
+        sys.exit(1)
+    if args.send_email and not (
+        config.POSTMARK_SERVER_TOKEN and config.DIGEST_EMAIL_FROM and config.DIGEST_EMAIL_TO
+    ):
+        print(
+            "Error: POSTMARK_SERVER_TOKEN, DIGEST_EMAIL_FROM, and DIGEST_EMAIL_TO must be set",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def find_prior_attempt() -> Optional[Issue]:
+    """Check for an issue left by an earlier attempt of this workflow run.
+
+    Exits if that attempt sent (or may have sent) the email. Returns the issue if
+    the attempt failed to email, so it can be reused; otherwise None.
+    """
+    with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
+        issues = profiler.get_latest_issues(
+            config.DIGEST_ISSUE_REPO, limit=config.DIGEST_RUN_LOOKUP, raise_errors=True
+        )
+    status, issue = delivery.run_status(issues, config.DIGEST_RUN_KEY)
+    if status == delivery.SENT:
+        print(f"Digest for run {config.DIGEST_RUN_KEY} already delivered (issue #{issue.number})")
+        sys.exit(0)
+    if status == delivery.PENDING:
+        print(
+            f"Error: issue #{issue.number} records an earlier attempt of run "
+            f"{config.DIGEST_RUN_KEY} whose email status is unknown. Check whether the "
+            "email arrived, change its '<!-- email: pending -->' marker to 'sent' or "
+            "'failed', then re-run.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if status == delivery.FAILED:
+        print(f"Earlier attempt did not send the email; reusing issue #{issue.number}")
+    return issue
+
+
+def email_digest(digest: str, now: datetime) -> None:
+    print(f"Emailing digest to {config.DIGEST_EMAIL_TO}...")
+    send_email(
+        config.POSTMARK_SERVER_TOKEN,
+        config.DIGEST_EMAIL_FROM,
+        config.DIGEST_EMAIL_TO,
+        now.strftime("Digest: %A, %Y-%m-%d"),
+        render_digest_html(digest),
+        digest,
+    )
+    print("Email sent")
+
+
+def deliver_digest(
+    digest: str,
+    scored_articles: list,
+    now: datetime,
+    prior_issue: Optional[Issue],
+) -> None:
+    """Record selected articles as a pending issue, email the digest, then mark it sent.
+
+    With the issue written before the email, a rerun always finds this run's
+    record and never sends a second email (see find_prior_attempt).
+    """
+    repo = config.DIGEST_ISSUE_REPO
+    title = now.strftime("Digest: %A, %Y-%m-%d, %H:%M")
+    body = delivery.build_issue_body(
+        format_article_list(scored_articles), config.DIGEST_RUN_KEY, delivery.PENDING
+    )
+
+    with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
+        if prior_issue:
+            number, url = profiler.update_issue(repo, prior_issue.number, body, title=title)
+        else:
+            number, url = profiler.create_issue(repo, title, body)
+        print(f"Recorded articles (email pending): {url}")
+
+        try:
+            email_digest(digest, now)
+        except HTTPError:
+            # Postmark rejected the request, so nothing was sent: let a rerun retry
+            # and stop deduping against these articles
+            profiler.update_issue(repo, number, delivery.set_status(body, delivery.FAILED))
+            raise
+        # Any other error (e.g. a timeout) leaves the issue pending: the email may have gone out
+
+        profiler.update_issue(repo, number, delivery.set_status(body, delivery.SENT))
+        print(f"Marked email sent: {url}")
+
+
 def cmd_digest(args):
     """Generate a full digest: profile + search + summarize."""
+    check_digest_settings(args)
+
+    # Retry safety: only the combined email + issue flow records a run's delivery
+    prior_issue = None
+    if args.send_email and args.post_issue and config.DIGEST_RUN_KEY:
+        prior_issue = find_prior_attempt()
+
     print(f"Building activity profile (last {config.PROFILE_DAYS} days)...")
 
     try:
@@ -196,7 +320,8 @@ def cmd_digest(args):
                 if recent_issues:
                     previous_urls: set[str] = set()
                     for issue in recent_issues:
-                        if issue.body:
+                        # Failed deliveries were never emailed, so their articles stay eligible
+                        if issue.body and delivery.get_status(issue.body) != delivery.FAILED:
                             previous_urls |= extract_urls_from_text(issue.body)
                     original_count = len(articles)
                     articles = [a for a in articles if a.url not in previous_urls]
@@ -227,51 +352,23 @@ def cmd_digest(args):
                 f.write(digest)
             print(f"Digest written to {args.output}")
 
-        pacific = ZoneInfo("America/Los_Angeles")
-        now = datetime.now(pacific)
+        now = datetime.now(ZoneInfo("America/Los_Angeles"))
 
-        # Email first: if sending fails, no issue is recorded, so articles are not deduped
-        if args.send_email:
-            if not (
-                config.POSTMARK_SERVER_TOKEN
-                and config.DIGEST_EMAIL_FROM
-                and config.DIGEST_EMAIL_TO
-            ):
-                print(
-                    "Error: POSTMARK_SERVER_TOKEN, DIGEST_EMAIL_FROM, and DIGEST_EMAIL_TO must be set",
-                    file=sys.stderr,
+        if args.send_email and args.post_issue:
+            deliver_digest(digest, scored_articles, now, prior_issue)
+        elif args.send_email:
+            email_digest(digest, now)
+        elif args.post_issue:
+            print(f"Recording articles as issue in {config.DIGEST_ISSUE_REPO}...")
+            with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
+                _, issue_url = profiler.create_issue(
+                    config.DIGEST_ISSUE_REPO,
+                    now.strftime("Digest: %A, %Y-%m-%d, %H:%M"),
+                    delivery.build_issue_body(
+                        format_article_list(scored_articles), None, None
+                    ),
                 )
-                sys.exit(1)
-
-            print(f"Emailing digest to {config.DIGEST_EMAIL_TO}...")
-            send_email(
-                config.POSTMARK_SERVER_TOKEN,
-                config.DIGEST_EMAIL_FROM,
-                config.DIGEST_EMAIL_TO,
-                now.strftime("Digest: %A, %Y-%m-%d"),
-                render_digest_html(digest),
-                digest,
-            )
-            print("Email sent")
-
-        # Record only the selected articles (no commentary) for later deduplication
-        if args.post_issue:
-            if not config.DIGEST_ISSUE_REPO:
-                print("Error: DIGEST_ISSUE_REPO not configured", file=sys.stderr)
-                sys.exit(1)
-
-            if scored_articles:
-                print(f"Recording articles as issue in {config.DIGEST_ISSUE_REPO}...")
-                title = now.strftime("Digest: %A, %Y-%m-%d, %H:%M")
-                with GitHubProfiler(config.GITHUB_TOKEN) as profiler:
-                    issue_url = profiler.create_issue(
-                        config.DIGEST_ISSUE_REPO,
-                        title,
-                        format_article_list(scored_articles),
-                    )
-                print(f"Issue created: {issue_url}")
-            else:
-                print("No articles to record; skipping issue")
+            print(f"Issue created: {issue_url}")
 
         if not args.output and not args.post_issue and not args.send_email:
             print(digest)

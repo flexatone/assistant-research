@@ -17,6 +17,9 @@ POSTMARK_SERVER_TOKEN = os.getenv("POSTMARK_SERVER_TOKEN")
 DIGEST_EMAIL_FROM = os.getenv("DIGEST_EMAIL_FROM")
 DIGEST_EMAIL_TO = os.getenv("DIGEST_EMAIL_TO")
 
+# Identifies a workflow run; reruns of the same run share it (unset outside Actions)
+DIGEST_RUN_KEY = os.getenv("GITHUB_RUN_ID")
+
 # Comma-separated list of GitHub organizations whose repos should be excluded
 EXCLUDED_ORGS_STR = os.getenv("EXCLUDED_ORGS", "")
 EXCLUDED_ORGS = [org.strip() for org in EXCLUDED_ORGS_STR.split(",") if org.strip()]
@@ -111,3 +114,6 @@ DIGEST_ISSUE_REPO: str | None = "flexatone/assistant-research"
 
 # Number of past digest issues to check for deduplication
 DIGEST_LOOKBACK = 6
+
+# Number of recent issues to search for this run's issue when a run is retried
+DIGEST_RUN_LOOKUP = 30
