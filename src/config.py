@@ -104,7 +104,7 @@ PROFILE_CONTEXT = [
 # =============================================================================
 
 # Minimum relevance score (0-1) to include an article
-RELEVANCE_THRESHOLD = 0.6
+RELEVANCE_THRESHOLD = 0.65
 
 # Model to use for relevance scoring (fast and cheap)
 SCORING_MODEL = "claude-sonnet-5"
