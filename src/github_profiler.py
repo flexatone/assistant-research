@@ -1,5 +1,6 @@
 """GitHub API client for fetching user activity data."""
 
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -49,6 +50,17 @@ class PullRequest:
     merged_at: Optional[datetime]
 
 
+# Attempts for write requests that fail with transient errors (network, 429, 5xx)
+WRITE_ATTEMPTS = 3
+WRITE_RETRY_DELAY = 2.0
+
+
+def _is_transient(e: httpx.HTTPError) -> bool:
+    if isinstance(e, httpx.HTTPStatusError):
+        return e.response.status_code == 429 or e.response.status_code >= 500
+    return isinstance(e, httpx.TransportError)
+
+
 @dataclass(frozen=True)
 class Issue:
     """Issue data."""
@@ -93,6 +105,21 @@ class GitHubProfiler:
         response = self.client.get(endpoint, params=params)
         response.raise_for_status()
         return response.json()
+
+    def _write(self, method: str, endpoint: str, json: dict) -> dict:
+        """Make a POST/PATCH request, retrying transient failures."""
+        send = getattr(self.client, method)
+        for attempt in range(1, WRITE_ATTEMPTS + 1):
+            try:
+                response = send(endpoint, json=json)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPError as e:
+                if attempt == WRITE_ATTEMPTS or not _is_transient(e):
+                    raise
+                print(f"GitHub {method.upper()} {endpoint} failed ({e}); retrying...")
+                time.sleep(WRITE_RETRY_DELAY * attempt)
+        raise AssertionError("unreachable")
 
     def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
         """Parse GitHub datetime string to datetime object."""
@@ -401,13 +428,16 @@ class GitHubProfiler:
 
         return issues[:limit]
 
-    def get_latest_issues(self, repo: str, limit: int = 1) -> list[Issue]:
+    def get_latest_issues(
+        self, repo: str, limit: int = 1, raise_errors: bool = False
+    ) -> list[Issue]:
         """
         Fetch the most recent issues from a repository.
 
         Args:
             repo: Repository full name (e.g., "owner/repo").
             limit: Maximum number of issues to fetch.
+            raise_errors: If True, raise on HTTP errors instead of returning [].
 
         Returns:
             List of Issue objects, newest first.
@@ -444,9 +474,11 @@ class GitHubProfiler:
                 )
             return issues
         except httpx.HTTPStatusError:
+            if raise_errors:
+                raise
             return []
 
-    def create_issue(self, repo: str, title: str, body: str) -> str:
+    def create_issue(self, repo: str, title: str, body: str) -> tuple[int, str]:
         """
         Create a new issue in a repository.
 
@@ -456,12 +488,22 @@ class GitHubProfiler:
             body: Issue body (markdown).
 
         Returns:
-            URL of the created issue.
+            Number and URL of the created issue.
         """
-        response = self.client.post(
-            f"/repos/{repo}/issues",
-            json={"title": title, "body": body},
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data["html_url"]
+        data = self._write("post", f"/repos/{repo}/issues", {"title": title, "body": body})
+        return data["number"], data["html_url"]
+
+    def update_issue(
+        self, repo: str, number: int, body: str, title: Optional[str] = None
+    ) -> tuple[int, str]:
+        """
+        Replace the body (and optionally the title) of an existing issue.
+
+        Returns:
+            Number and URL of the updated issue.
+        """
+        payload = {"body": body}
+        if title is not None:
+            payload["title"] = title
+        data = self._write("patch", f"/repos/{repo}/issues/{number}", payload)
+        return data["number"], data["html_url"]

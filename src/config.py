@@ -12,6 +12,14 @@ load_dotenv()
 GITHUB_TOKEN = os.getenv("USER_GITHUB_TOKEN")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+# Postmark token and addresses for emailing the digest
+POSTMARK_SERVER_TOKEN = os.getenv("POSTMARK_SERVER_TOKEN")
+DIGEST_EMAIL_FROM = os.getenv("DIGEST_EMAIL_FROM")
+DIGEST_EMAIL_TO = os.getenv("DIGEST_EMAIL_TO")
+
+# Identifies a workflow run; reruns of the same run share it (unset outside Actions)
+DIGEST_RUN_KEY = os.getenv("GITHUB_RUN_ID")
+
 # Comma-separated list of GitHub organizations whose repos should be excluded
 EXCLUDED_ORGS_STR = os.getenv("EXCLUDED_ORGS", "")
 EXCLUDED_ORGS = [org.strip() for org in EXCLUDED_ORGS_STR.split(",") if org.strip()]
@@ -82,7 +90,7 @@ PROFILE_CONTEXT = [
 RELEVANCE_THRESHOLD = 0.6
 
 # Model to use for relevance scoring (fast and cheap)
-SCORING_MODEL = "claude-sonnet-4-5-20250929"
+SCORING_MODEL = "claude-sonnet-5"
 
 # Maximum articles to score in a single batch
 SCORING_BATCH_SIZE = 20
@@ -92,7 +100,7 @@ SCORING_BATCH_SIZE = 20
 # =============================================================================
 
 # Model to use for digest generation (more capable for synthesis)
-DIGEST_MODEL = "claude-opus-4-6"
+DIGEST_MODEL = "claude-opus-5-5"
 
 # Maximum tokens for digest output; 32k is max for opus
 DIGEST_MAX_TOKENS = 4096
@@ -106,3 +114,6 @@ DIGEST_ISSUE_REPO: str | None = "flexatone/assistant-research"
 
 # Number of past digest issues to check for deduplication
 DIGEST_LOOKBACK = 6
+
+# Number of recent issues to search for this run's issue when a run is retried
+DIGEST_RUN_LOOKUP = 30

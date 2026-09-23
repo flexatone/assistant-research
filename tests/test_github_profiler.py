@@ -265,12 +265,13 @@ class TestCreateIssue:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.post.return_value = mock_response(
-            {"html_url": "https://github.com/user/repo/issues/123"}
+            {"number": 123, "html_url": "https://github.com/user/repo/issues/123"}
         )
 
         with GitHubProfiler(token="fake-token") as profiler:
-            url = profiler.create_issue("user/repo", "Test Issue", "Issue body")
+            number, url = profiler.create_issue("user/repo", "Test Issue", "Issue body")
 
+        assert number == 123
         assert url == "https://github.com/user/repo/issues/123"
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
