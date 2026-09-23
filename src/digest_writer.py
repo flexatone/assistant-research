@@ -1,7 +1,5 @@
 """Generates digests combining user profile and relevant articles."""
 
-from anthropic.types import TextBlock
-
 from . import config
 from .anthropic_client import AnthropicClientBase
 from .relevance_scorer import ScoredArticle
@@ -84,9 +82,7 @@ Write in a professional, concise tone. Use markdown formatting. Focus on actiona
             messages=[{"role": "user", "content": prompt}],
         )
 
-        block = response.content[0]
-        assert isinstance(block, TextBlock)
-        return block.text
+        return self.response_text(response)
 
 
 def format_article_list(scored_articles: list[ScoredArticle]) -> str:

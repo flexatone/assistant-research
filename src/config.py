@@ -109,6 +109,10 @@ SCORING_MODEL = "claude-sonnet-5"
 # Maximum articles to score in a single batch
 SCORING_BATCH_SIZE = 20
 
+# Maximum output tokens per scoring request; the model thinks by default and
+# thinking counts toward this limit
+SCORING_MAX_TOKENS = 16000
+
 # =============================================================================
 # Digest Generation Settings
 # =============================================================================
@@ -116,8 +120,8 @@ SCORING_BATCH_SIZE = 20
 # Model to use for digest generation (more capable for synthesis)
 DIGEST_MODEL = "claude-opus-5-5"
 
-# Maximum tokens for digest output; 32k is max for opus
-DIGEST_MAX_TOKENS = 4096
+# Maximum output tokens for the digest, including thinking (on by default)
+DIGEST_MAX_TOKENS = 16000
 
 # Number of top picks to highlight in the digest
 DIGEST_TOP_PICKS = 8

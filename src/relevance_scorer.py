@@ -5,8 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Optional
 
-from anthropic.types import TextBlock
-
 from . import config
 from .anthropic_client import AnthropicClientBase
 from .rss_searcher import Article
@@ -108,7 +106,7 @@ Only output the JSON array, no other text."""
 
         response = self.client.messages.create(
             model=config.SCORING_MODEL,
-            max_tokens=2048,
+            max_tokens=config.SCORING_MAX_TOKENS,
             system=[
                 {
                     "type": "text",
@@ -119,9 +117,7 @@ Only output the JSON array, no other text."""
             messages=[{"role": "user", "content": user_prompt}],
         )
 
-        block = response.content[0]
-        assert isinstance(block, TextBlock)
-        return self._parse_scores(block.text, articles)
+        return self._parse_scores(self.response_text(response), articles)
 
     def score_articles(
         self,
