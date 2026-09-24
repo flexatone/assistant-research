@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 from src.github_profiler import GitHubProfiler
 from src.profile_builder import ProfileBuilder
-from src.rss_searcher import RSSSearcher
+from src.rss_searcher import RSSSearcher, canonical_url
 from src.relevance_scorer import RelevanceScorer
 from src.digest_writer import DigestWriter, format_article_list
 from src.email_sender import render_digest_html, send_email
@@ -324,7 +324,10 @@ def cmd_digest(args):
                         if issue.body and delivery.get_status(issue.body) != delivery.FAILED:
                             previous_urls |= extract_urls_from_text(issue.body)
                     original_count = len(articles)
-                    articles = [a for a in articles if a.url not in previous_urls]
+                    previous_keys = {canonical_url(u) for u in previous_urls}
+                    articles = [
+                        a for a in articles if canonical_url(a.url) not in previous_keys
+                    ]
                     deduped = original_count - len(articles)
                     if deduped > 0:
                         print(

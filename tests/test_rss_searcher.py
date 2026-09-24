@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from src.rss_searcher import RSSSearcher, Article, FeedResult
+from src.rss_searcher import RSSSearcher, Article, FeedResult, canonical_url
 
 
 def make_entry(title: str, link: str, summary: str = None, published: datetime = None):
@@ -191,7 +191,8 @@ class TestFetchAllFeeds:
         )
         articles = searcher.fetch_all_feeds()
 
-        assert len(articles) == 2
+        # Both feeds return the same URL (e.g. two Wired categories): keep one
+        assert len(articles) == 1
         assert mock_parse.call_count == 2
 
     @patch("src.rss_searcher.cloudscraper.create_scraper")
@@ -301,3 +302,48 @@ class TestFetchAllFeedsWithResults:
         results = searcher.fetch_all_feeds_with_results()
 
         assert [r.name for r in results] == ["Feed C", "Feed A", "Feed B"]
+
+
+class TestDedupAcrossFeeds:
+    """Articles repeated across feeds are collapsed to one."""
+
+    def test_keeps_first_by_feed_order(self):
+        url = "https://www.wired.com/story/openai-agent-hacked/"
+
+        def article(source, u=url):
+            return Article(title="Same", url=u, summary=None, published=None, source=source)
+
+        searcher = RSSSearcher(feeds=[])
+        results = [
+            FeedResult(name="Wired: AI", url="a", articles=[article("Wired: AI")]),
+            FeedResult(
+                name="Wired: Security",
+                url="b",
+                articles=[
+                    article("Wired: Security", url + "?utm_source=rss#top"),
+                    article("Wired: Security", "https://www.wired.com/story/other/"),
+                ],
+            ),
+        ]
+        with patch.object(searcher, "fetch_all_feeds_with_results", return_value=results):
+            articles = searcher.fetch_all_feeds()
+
+        assert [(a.source, a.url) for a in articles] == [
+            ("Wired: AI", url),
+            ("Wired: Security", "https://www.wired.com/story/other/"),
+        ]
+
+
+class TestCanonicalUrl:
+    def test_ignores_tracking_fragment_slash_and_host_case(self):
+        assert canonical_url("https://WWW.Example.com/a/b/?utm_source=rss&utm_medium=x#frag") == (
+            canonical_url("https://www.example.com/a/b")
+        )
+
+    def test_keeps_meaningful_query_and_path_case(self):
+        assert canonical_url("https://a.com/item?id=1") != canonical_url("https://a.com/item?id=2")
+        assert canonical_url("https://a.com/Path") != canonical_url("https://a.com/path")
+
+    def test_keeps_parentheses(self):
+        url = "https://en.wikipedia.org/wiki/Rust_(programming_language)"
+        assert canonical_url(url) == url

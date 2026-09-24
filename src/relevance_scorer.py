@@ -29,11 +29,11 @@ class RelevanceScorer(AnthropicClientBase):
 {profile_summary}
 
 # Scoring Guidelines
-Score each article from 0.0 to 1.0 in 0.5 increments based on how relevant it is to this developer's interests:
-- 0.0-0.3: Not relevant (different domain, technology, or focus area)
-- 0.4-0.5: Marginally relevant (tangentially related topics)
-- 0.6-0.7: Relevant (related to their technologies or interests)
-- 0.8-1.0: Highly relevant (directly related to their active work)
+Score each article from 0.0 to 1.0 in 0.05 increments based on how relevant it is to this developer's interests:
+- Below 0.4: Not relevant (different domain, technology, or focus area)
+- 0.4 up to 0.6: Marginally relevant (tangentially related topics)
+- 0.6 up to 0.8: Relevant (related to their technologies or interests)
+- 0.8 to 1.0: Highly relevant (directly related to their active work)
 
 Respond with a JSON array of objects, one per article, in order:
 [

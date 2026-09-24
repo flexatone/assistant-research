@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from time import mktime
 from typing import Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import cloudscraper
 import feedparser
@@ -22,6 +23,25 @@ class FeedResult:
     @property
     def ok(self) -> bool:
         return self.error is None and len(self.articles) > 0
+
+
+def canonical_url(url: str) -> str:
+    """Normalize a URL for matching (not display).
+
+    Lowercases the scheme and host and drops the fragment, utm_* tracking
+    parameters, and any trailing slash on the path.
+    """
+    parts = urlsplit(url.strip())
+    query = urlencode(
+        [
+            (k, v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True)
+            if not k.lower().startswith("utm_")
+        ]
+    )
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), query, "")
+    )
 
 
 @dataclass(frozen=True)
@@ -153,13 +173,21 @@ class RSSSearcher:
         Fetch articles from all configured feeds concurrently.
 
         Returns:
-            List of all Article objects, sorted by publish date (newest first).
+            List of unique Article objects (by canonical URL), sorted by publish
+            date (newest first).
         """
         feed_results = self.fetch_all_feeds_with_results()
 
+        # The same article can appear in several feeds (e.g. two Wired
+        # categories); keep the first by feed order
         all_articles = []
+        seen: set[str] = set()
         for result in feed_results:
-            all_articles.extend(result.articles)
+            for article in result.articles:
+                key = canonical_url(article.url)
+                if key not in seen:
+                    seen.add(key)
+                    all_articles.append(article)
 
         # Sort by published date, newest first (None dates go to the end)
         all_articles.sort(
