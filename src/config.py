@@ -107,7 +107,7 @@ PROFILE_CONTEXT = [
 RELEVANCE_THRESHOLD = 0.65
 
 # Model to use for relevance scoring (fast and cheap)
-SCORING_MODEL = "claude-sonnet-5"
+SCORING_MODEL = "claude-sonnet-5-5"
 
 # Maximum articles to score in a single batch
 SCORING_BATCH_SIZE = 20

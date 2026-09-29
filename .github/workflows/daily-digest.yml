@@ -2,10 +2,12 @@ name: Daily Research Digest
 
 on:
   schedule:
-    # 5:17 AM Pacific (13:17 UTC) - runs at 6:17 AM during daylight saving
-    # Monday through Friday only; off the top of the hour, when GitHub's
-    # scheduler is busiest and most likely to delay or drop runs
-    - cron: '17 13 * * 1-5'
+    # 07:17 UTC: 12:17 AM Pacific during daylight saving, 11:17 PM the previous
+    # evening in winter. GitHub often starts scheduled runs hours late (5-7h
+    # observed in Sep 2026), so scheduling overnight still lands the digest by
+    # morning. Monday through Friday (UTC) only; off the top of the hour, when
+    # GitHub's scheduler is busiest.
+    - cron: '17 7 * * 1-5'
   workflow_dispatch:  # Allow manual trigger
 
 permissions:
